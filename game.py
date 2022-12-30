@@ -5,16 +5,34 @@ from pieces import *
 from pieces.Piece import *
 
 
+class SquareColor(Enum):
+    DARK = '#948245'
+    LIGHT = '#E6dAB2'
+    AVAILABLE = '#FFF5bd'
+    ATTACK = '#F74739'
+
+
 class Game:
     gameWindow = None
     buttonMatrix = None
     piecesMatrix = None
     selectedPiece = None
+    selectedPieceCoords = None;
+    availablePositions = None
+    turn = None
 
     def __init__(self):
         self.gameWindow = Tk()
         self.buttonMatrix = []
         self.piecesMatrix = []
+        self.availablePositions = []
+        self.turn = Color.LIGHT
+
+        for i in range(0, 8):
+            row = []
+            for j in range(0, 8):
+                row.append(0)
+            self.availablePositions.append(row)
 
     def createButtonMatrix(self):
         # creates the button matrix
@@ -22,13 +40,13 @@ class Game:
             helperRow = []
             for j in range(0, 8):
                 if (i + j) % 2 == 0:
-                    color = '#E6dAB2'
+                    color = SquareColor.LIGHT
                 else:
-                    color = '#948245'
+                    color = SquareColor.DARK
 
                 # creates a new button that will do buttonClicked method each time it is pressed
                 # m contains this button's arguments
-                newButton = Button(self.gameWindow, padx=100, pady=80, bg=color,
+                newButton = Button(self.gameWindow, padx=100, pady=80, bg=color.value,
                                    command=lambda coords=(i, j): self.buttonClicked(coords))
                 newButton.grid(row=i, column=j)
                 helperRow.append(newButton)
@@ -44,33 +62,33 @@ class Game:
         darkBackRow = []
 
         for i in range(0, 8):
-            lightPawnRow.append(Pawn(6, i))
-            darkPawnRow.append(Pawn(1, i))
+            lightPawnRow.append(Pawn(6, i, Color.LIGHT))
+            darkPawnRow.append(Pawn(1, i, Color.DARK))
             match i:
                 case 0:
-                    lightBackRow.append(Rook(7, i))
-                    darkBackRow.append(Rook(0, i))
+                    lightBackRow.append(Rook(7, i, Color.LIGHT))
+                    darkBackRow.append(Rook(0, i, Color.DARK))
                 case 1:
-                    lightBackRow.append(Knight(7, i))
-                    darkBackRow.append(Knight(0, i))
+                    lightBackRow.append(Knight(7, i, Color.LIGHT))
+                    darkBackRow.append(Knight(0, i, Color.DARK))
                 case 2:
-                    lightBackRow.append(Bishop(7, i))
-                    darkBackRow.append(Bishop(0, i))
+                    lightBackRow.append(Bishop(7, i, Color.LIGHT))
+                    darkBackRow.append(Bishop(0, i, Color.DARK))
                 case 3:
-                    lightBackRow.append(Queen(7, i))
-                    darkBackRow.append(Queen(0, i))
+                    lightBackRow.append(Queen(7, i, Color.LIGHT))
+                    darkBackRow.append(Queen(0, i, Color.DARK))
                 case 4:
-                    lightBackRow.append(King(7, i))
-                    darkBackRow.append(King(0, i))
+                    lightBackRow.append(King(7, i, Color.LIGHT))
+                    darkBackRow.append(King(0, i, Color.DARK))
                 case 5:
-                    lightBackRow.append(Bishop(7, i))
-                    darkBackRow.append(Bishop(0, i))
+                    lightBackRow.append(Bishop(7, i, Color.LIGHT))
+                    darkBackRow.append(Bishop(0, i, Color.DARK))
                 case 6:
-                    lightBackRow.append(Knight(7, i))
-                    darkBackRow.append(Knight(0, i))
+                    lightBackRow.append(Knight(7, i, Color.LIGHT))
+                    darkBackRow.append(Knight(0, i, Color.DARK))
                 case 7:
-                    lightBackRow.append(Rook(7, i))
-                    darkBackRow.append(Rook(0, i))
+                    lightBackRow.append(Rook(7, i, Color.LIGHT))
+                    darkBackRow.append(Rook(0, i, Color.DARK))
 
             for i in range(0, 8):
                 match i:
@@ -190,18 +208,80 @@ class Game:
         self.gameWindow.mainloop()
 
     def buttonClicked(self, coords):
-        if self.piecesMatrix[coords[0]][coords[1]] is not None:
-            # If a nonempty place is pressed, then the user is trying to select that piece
+        if self.piecesMatrix[coords[0]][coords[1]] is not None\
+                and self.piecesMatrix[coords[0]][coords[1]].getColor() == self.turn:
+            # If a nonempty place is pressed and it has the same color as the player's turn
+            # then the user is trying to select that piece
             if self.piecesMatrix[coords[0]][coords[1]].isSelected() == 0:
                 if self.selectedPiece is not None:
                     self.selectedPiece.Unselect()
 
-                print(self.piecesMatrix[coords[0]][coords[1]])
-                self.piecesMatrix[coords[0]][coords[1]].Select()
-                self.selectedPiece = self.piecesMatrix[coords[0]][coords[1]]
-        else:
-            # user is trying to move the piece, check if the position is valid
-            print("unavailable position")
+                # print(self.piecesMatrix[coords[0]][coords[1]])
 
+                self.piecesMatrix[coords[0]][coords[1]].Select()
+
+                self.selectedPiece = self.piecesMatrix[coords[0]][coords[1]]
+                self.selectedPieceCoords = coords
+
+                self.selectedPiece.setAvailablePositions(self.availablePositions, self.piecesMatrix)
+
+                # print(self.availablePositions)
+                self.updateColors()
+        else:
+            # user is trying to move the piece or attack another
+            # (or it's not his turn, in that case nothing is done)
+
+            # trying to move to an unavailable spot (unselect selected piece and reset the colors)
+            if self.availablePositions[coords[0]][coords[1]] == 0:
+                if self.selectedPiece is not None:
+                    self.selectedPiece.Unselect()
+                self.selectedPiece = None
+
+                for i in range(0, 8):
+                    for j in range(0, 8):
+                        self.availablePositions[i][j] = 0
+                self.updateColors()
+
+            # trying to move to an empty spot or attack another piece
+            else:
+                self.moveSelectedPiece(coords)
+
+                for i in range(0, 8):
+                    for j in range(0, 8):
+                        self.availablePositions[i][j] = 0
+                self.updateColors()
+
+    def updateColors(self):
+        for i in range(0, 8):
+            for j in range(0, 8):
+                match self.availablePositions[i][j]:
+                    case 0:
+                        self.buttonMatrix[i][j].configure(
+                            bg=SquareColor.LIGHT.value if (i + j) % 2 == 0 else SquareColor.DARK.value)
+                    case 1:
+                        self.buttonMatrix[i][j].configure(bg=SquareColor.AVAILABLE.value)
+                    case 2:
+                        self.buttonMatrix[i][j].configure(bg=SquareColor.ATTACK.value)
+
+    def moveSelectedPiece(self, coords):
+        # change de piece matrix
+        self.piecesMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] = None
+        removedPiece = self.piecesMatrix[coords[0]][coords[1]]
+        self.piecesMatrix[coords[0]][coords[1]] = self.selectedPiece
+        self.selectedPiece.setCoords(coords)
+
+        # change buttons matrix
+        movingPieceImage = self.buttonMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]].cget('image')
+        self.buttonMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]].configure(image='')
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=movingPieceImage)
+
+
+
+        self.selectedPiece.Unselect()
+        self.selectedPiece = None
+        self.selectedPieceCoords = None
+
+        # change the turn
+        self.turn = Color.LIGHT if self.turn == Color.DARK else Color.DARK
 
 
