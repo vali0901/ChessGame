@@ -44,16 +44,26 @@ class Piece:
     def getColor(self):
         return self.color
 
+    def getCoords(self):
+        return self.x, self.y
+
     def setCoords(self, coords):
         self.x = coords[0]
         self.y = coords[1]
 
+    # method used for coloring the buttons when a piece is selected
     # aPos -> available positions where this piece can be moved
     # pPos -> current positions of all the pieces on the table
     def setAvailablePositions(self, aPos, pPos):
         for i in range(0, 8):
             for j in range(0, 8):
                 aPos[i][j] = 0
+
+    # # returns a matrix containing the direction ths piece can go,
+    # # regardless of the other existing pieces
+    # def getGeneralDirection(self):
+    #     return None
+
 
 
 class Pawn(Piece):
@@ -74,32 +84,66 @@ class Pawn(Piece):
                 if pPos[currX - 1][currY] is None:
                     aPos[currX - 1][currY] = 1
 
-                if currX == 6 and pPos[currX - 2][currY] is None:
+                if currX == 6 and pPos[currX - 2][currY] is None and pPos[currX - 1][currY] is None:
                     aPos[currX - 2][currY] = 1
+
+                if currY - 1 >= 0:
+                    aPos[currX - 1][currY - 1] = -1
 
                 if currY - 1 >= 0 \
                         and pPos[currX - 1][currY - 1] is not None \
                         and pPos[currX - 1][currY - 1].getColor() != self.getColor():
                     aPos[currX - 1][currY - 1] = 2
 
+                if currY - 1 >= 0 \
+                        and pPos[currX - 1][currY - 1] is not None \
+                        and pPos[currX - 1][currY - 1].getColor() == self.getColor():
+                    aPos[currX - 1][currY - 1] = 3
+
+                if currY + 1 < 8:
+                    aPos[currX - 1][currY + 1] = -1
+
                 if currY + 1 < 8 \
                         and pPos[currX - 1][currY + 1] is not None \
-                        and pPos[currX - 1][currY - 1].getColor() != self.getColor():
+                        and pPos[currX - 1][currY + 1].getColor() != self.getColor():
                     aPos[currX - 1][currY + 1] = 2
+
+                if currY + 1 < 8 \
+                        and pPos[currX - 1][currY + 1] is not None \
+                        and pPos[currX - 1][currY + 1].getColor() == self.getColor():
+                    aPos[currX - 1][currY + 1] = 3
 
             case Color.DARK:
 
                 if pPos[currX + 1][currY] is None:
                     aPos[currX + 1][currY] = 1
 
-                if currX == 1 and pPos[currX + 2][currY] is None:
+                if currX == 1 and pPos[currX + 2][currY] is None and pPos[currX + 1][currY] is None:
                     aPos[currX + 2][currY] = 1
 
-                if currY - 1 >= 0 and pPos[currX + 1][currY - 1] is not None:
+                if currY - 1 >= 0:
+                    aPos[currX + 1][currY - 1] = -1
+
+                if currY - 1 >= 0 and pPos[currX + 1][currY - 1] is not None\
+                        and pPos[currX + 1][currY - 1].getColor() != self.getColor():
+
                     aPos[currX + 1][currY - 1] = 2
 
-                if currY + 1 < 8 and pPos[currX + 1][currY + 1] is not None:
+                if currY - 1 >= 0 and pPos[currX + 1][currY - 1] is not None\
+                        and pPos[currX + 1][currY - 1].getColor() == self.getColor():
+
+                    aPos[currX + 1][currY - 1] = 3
+
+                if currY + 1 < 8:
+                    aPos[currX + 1][currY + 1] = -1
+
+                if currY + 1 < 8 and pPos[currX + 1][currY + 1] is not None \
+                        and pPos[currX + 1][currY + 1].getColor() != self.getColor():
                     aPos[currX + 1][currY + 1] = 2
+
+                if currY + 1 < 8 and pPos[currX + 1][currY + 1] is not None \
+                        and pPos[currX + 1][currY + 1].getColor() == self.getColor():
+                    aPos[currX + 1][currY + 1] = 3
 
 
 class King(Piece):
@@ -120,16 +164,16 @@ class King(Piece):
                     continue
 
                 # check if the other king is near to this position
-                otherKingNear = 0
-                for k in range(i - 1, i + 2):
-                    for l in range(j - 1, j + 2):
-                        if k < 0 or l < 0 or k > 7 or l > 7 or pPos[k][l] == self:
-                            continue
-                        if pPos[k][l] is not None and pPos[k][l].getType == PieceType.KING:
-                            otherKingNear = 1
-
-                if otherKingNear == 1:
-                    continue
+                # otherKingNear = 0
+                # for k in range(i - 1, i + 2):
+                #     for l in range(j - 1, j + 2):
+                #         if k < 0 or l < 0 or k > 7 or l > 7 or pPos[k][l] == self:
+                #             continue
+                #         if pPos[k][l] is not None and pPos[k][l].getType == PieceType.KING:
+                #             otherKingNear = 1
+                #
+                # if otherKingNear == 1:
+                #     continue
 
                 if pPos[i][j] is None:
                     aPos[i][j] = 1
@@ -137,6 +181,8 @@ class King(Piece):
                     # needs another check that verifies if the king will be in check in this position
                     if pPos[i][j].getColor() != self.getColor():
                         aPos[i][j] = 2
+                    else:
+                        aPos[i][j] = 3
 
 
 class Queen(Piece):
@@ -161,6 +207,8 @@ class Queen(Piece):
             else:
                 if pPos[currX][j].getColor() != self.color:
                     aPos[currX][j] = 2
+                else:
+                    aPos[currX][j] = 3
                 break
 
         for j in range(currY + 1, 8):
@@ -171,6 +219,8 @@ class Queen(Piece):
             else:
                 if pPos[currX][j].getColor() != self.color:
                     aPos[currX][j] = 2
+                else:
+                    aPos[currX][j] = 3
                 break
 
         # check the vertical line
@@ -182,6 +232,8 @@ class Queen(Piece):
             else:
                 if pPos[i][currY].getColor() != self.color:
                     aPos[i][currY] = 2
+                else:
+                    aPos[i][currY] = 3
                 break
 
         for i in range(currX + 1, 8):
@@ -193,6 +245,8 @@ class Queen(Piece):
             else:
                 if pPos[i][currY].getColor() != self.color:
                     aPos[i][currY] = 2
+                else:
+                    aPos[i][currY] = 3
                 break
 
         # check diagonal lines
@@ -204,6 +258,8 @@ class Queen(Piece):
                 else:
                     if pPos[currX + k][currY + k].getColor() != self.color:
                         aPos[currX + k][currY + k] = 2
+                    else:
+                        aPos[currX + k][currY + k] = 3
                     d1 = 1
             else:
                 d1 = 1
@@ -214,6 +270,8 @@ class Queen(Piece):
                 else:
                     if pPos[currX - k][currY + k].getColor() != self.color:
                         aPos[currX - k][currY + k] = 2
+                    else:
+                        aPos[currX - k][currY + k] = 3
                     d2 = 1
             else:
                 d2 = 1
@@ -224,6 +282,8 @@ class Queen(Piece):
                 else:
                     if pPos[currX + k][currY - k].getColor() != self.color:
                         aPos[currX + k][currY - k] = 2
+                    else:
+                        aPos[currX + k][currY - k] = 3
                     d3 = 1
             else:
                 d3 = 1
@@ -234,6 +294,8 @@ class Queen(Piece):
                 else:
                     if pPos[currX - k][currY - k].getColor() != self.color:
                         aPos[currX - k][currY - k] = 2
+                    else:
+                        aPos[currX - k][currY - k] = 3
                     d4 = 1
             else:
                 d4 = 1
@@ -260,6 +322,8 @@ class Bishop(Piece):
                 else:
                     if pPos[currX + k][currY + k].getColor() != self.color:
                         aPos[currX + k][currY + k] = 2
+                    else:
+                        aPos[currX + k][currY + k] = 3
                     d1 = 1
             else:
                 d1 = 1
@@ -270,6 +334,8 @@ class Bishop(Piece):
                 else:
                     if pPos[currX - k][currY + k].getColor() != self.color:
                         aPos[currX - k][currY + k] = 2
+                    else:
+                        aPos[currX - k][currY + k] = 3
                     d2 = 1
             else:
                 d2 = 1
@@ -280,6 +346,8 @@ class Bishop(Piece):
                 else:
                     if pPos[currX + k][currY - k].getColor() != self.color:
                         aPos[currX + k][currY - k] = 2
+                    else:
+                        aPos[currX + k][currY - k] = 3
                     d3 = 1
             else:
                 d3 = 1
@@ -290,6 +358,8 @@ class Bishop(Piece):
                 else:
                     if pPos[currX - k][currY - k].getColor() != self.color:
                         aPos[currX - k][currY - k] = 2
+                    else:
+                        aPos[currX - k][currY - k] = 3
                     d4 = 1
             else:
                 d4 = 1
@@ -314,12 +384,13 @@ class Knight(Piece):
                     continue
                 if currX + i < 0 or currX + i > 7 or currY + j < 0 or currY + j > 7:
                     continue
-                print(i + j)
                 if pPos[currX + i][currY + j] is None:
                     aPos[currX + i][currY + j] = 1
                 else:
                     if pPos[currX + i][currY + j].getColor() != self.color:
                         aPos[currX + i][currY + j] = 2
+                    else:
+                        aPos[currX + i][currY + j] = 3
 
 
 class Rook(Piece):
@@ -344,6 +415,8 @@ class Rook(Piece):
             else:
                 if pPos[currX][j].getColor() != self.color:
                     aPos[currX][j] = 2
+                else:
+                    aPos[currX][j] = 3
                 break
 
         for j in range(currY + 1, 8):
@@ -354,6 +427,8 @@ class Rook(Piece):
             else:
                 if pPos[currX][j].getColor() != self.color:
                     aPos[currX][j] = 2
+                else:
+                    aPos[currX][j] = 3
                 break
 
         # check the vertical line
@@ -365,6 +440,8 @@ class Rook(Piece):
             else:
                 if pPos[i][currY].getColor() != self.color:
                     aPos[i][currY] = 2
+                else:
+                    aPos[i][currY] = 3
                 break
 
         for i in range(currX + 1, 8):
@@ -376,4 +453,6 @@ class Rook(Piece):
             else:
                 if pPos[i][currY].getColor() != self.color:
                     aPos[i][currY] = 2
+                else:
+                    aPos[i][currY] = 3
                 break
