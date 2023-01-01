@@ -18,14 +18,27 @@ class Game:
     piecesMatrix = None
     selectedPiece = None
     selectedPieceCoords = None
+
+    # selected piece's available positions where it can be moved
     availablePositions = None
+
     turn = None
     darkKing = None
+    # unused
     darkCheck = None
+
     lightKing = None
+
+    # unused
     lightCheck = None
+
+    # unused
     checkingPosition = None
 
+    # the layout for every color
+    # contains info about the directions of attack, pieces 'in danger' (when an enemy piece can be attacked),
+    # 'protected' pieces (if a piece is staying on the attack direction of a friendly piece),
+    # 'last piece standing' (when a piece is staying between an attacker and its king)
     darkAttackLayout = None
     lightAttackLayout = None
 
@@ -242,58 +255,658 @@ class Game:
         self.gameWindow.mainloop()
 
     def buttonClicked(self, coords):
-        if self.piecesMatrix[coords[0]][coords[1]] is not None \
-                and self.piecesMatrix[coords[0]][coords[1]].getColor() == self.turn:
-            # If a nonempty place is pressed and it has the same color as the player's turn
-            # then the user is trying to select that piece
-            if self.piecesMatrix[coords[0]][coords[1]].isSelected() == 0:
-                if self.selectedPiece is not None:
-                    self.selectedPiece.Unselect()
+        # SELECTING / UNSELECTING A PIECE
 
-                # print(self.piecesMatrix[coords[0]][coords[1]])
-
-                self.piecesMatrix[coords[0]][coords[1]].Select()
-
-                self.selectedPiece = self.piecesMatrix[coords[0]][coords[1]]
-                self.selectedPieceCoords = coords
-
-                self.selectedPiece.setAvailablePositions(self.availablePositions, self.piecesMatrix)
-
-                # print(self.availablePositions)
-                self.updateColors()
-        else:
-            # user is trying to move the piece or attack another
-            # (or it's not his turn, in that case nothing is done)
-
-            # trying to move to an unavailable spot (unselect selected piece and reset the colors)
-            if self.availablePositions[coords[0]][coords[1]] == 0:
-                if self.selectedPiece is not None:
-                    self.selectedPiece.Unselect()
+        # pressing on a non-piece button (if it's an unavailable position) or
+        # pressing on a piece of different color -> (resets colors)
+        if (self.availablePositions[coords[0]][coords[1]] == 0
+            and self.piecesMatrix[coords[0]][coords[1]] is None) \
+                or (self.piecesMatrix[coords[0]][coords[1]] is not None and
+                    self.piecesMatrix[coords[0]][coords[1]].getColor() != self.turn
+                    and self.availablePositions[coords[0]][coords[1]] != 2
+                    and self.availablePositions[coords[0]][coords[1]] != 4):
+            if self.selectedPiece is not None:
                 self.selectedPiece = None
+            self.resetColors()
+            return
 
-                for i in range(0, 8):
-                    for j in range(0, 8):
-                        self.availablePositions[i][j] = 0
-                self.updateColors()
+        # pressing on a piece of the right color -> select it
+        if self.selectedPiece is None \
+                or (self.piecesMatrix[coords[0]][coords[1]] is not None and
+                    self.piecesMatrix[coords[0]][coords[1]].getColor() == self.turn):
+            self.selectedPiece = self.piecesMatrix[coords[0]][coords[1]]
+            self.selectedPieceCoords = self.selectedPiece.getCoords()
+            self.selectedPiece.setAvailablePositions(self.availablePositions, self.piecesMatrix)
 
-            # trying to move to an empty spot or attack another piece
-            else:
-                self.moveSelectedPiece(coords)
-                if self.turn == Color.LIGHT:
-                    self.updateDarkAttackLayout()
-                    if self.lightKingIsChecked():
-                        print("light in check")
-                else:
-                    self.updateLightAttackLayout()
-                    if self.darkKingIsChecked():
-                        print("dark in check")
+            if self.turn == Color.LIGHT \
+                    and (self.darkAttackLayout[coords[0]][coords[1]] == 4
+                         or self.lightKingIsChecked()):
+                self.specialSetPositions()
+
+            if self.turn == Color.DARK \
+                    and (self.lightAttackLayout[coords[0]][coords[1]] == 4
+                         or self.darkKingIsChecked()):
+                self.specialSetPositions()
+
+            if self.selectedPiece.getType() == PieceType.KING:
+                self.setKingPositions()
+
+            self.updateColors()
+            return
+
+        # MOVING A PIECE
+
+        # moving a piece to an unavailable spot -> do nothing
+        if self.availablePositions[coords[0]][coords[1]] == 0:
+            return
+
+        # moving a piece to an available spot -> just move it there
+        if self.availablePositions[coords[0]][coords[1]] == 1:
+            self.simpleMove(coords)
+            self.changeTurn()
+            self.resetColors()
+            return
+
+        # attacking a piece
+        if self.availablePositions[coords[0]][coords[1]] == 2 \
+                or self.availablePositions[coords[0]][coords[1]] == 4:
+            self.attackPiece(coords)
+            self.changeTurn()
+            self.resetColors()
+
+    def setKingPositions(self):
+        for i in range(0, 8):
+            for j in range(0, 8):
+                if self.availablePositions[i][j] == 1 or self.availablePositions[i][j] == 2:
+                    if self.selectedPiece.getColor() == Color.LIGHT:
+                        if self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 1:
+                            self.availablePositions[i][j] = 0
+                    else:
+                        if self.lightAttackLayout[i][j] == 3 or self.lightAttackLayout[i][j] == 1:
+                            self.availablePositions[i][j] = 0
+
+    def specialSetPositions(self):
+        match self.turn:
+            case Color.LIGHT:
+                if self.lightKingIsChecked():
+                    if self.selectedPiece.getType() == PieceType.KING:
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if (self.availablePositions[i][j] == 1 and self.darkAttackLayout[i][j] == 1) \
+                                        or (self.availablePositions[i][j] == 2 and
+                                            (self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 6)):
+                                    self.availablePositions[i][j] = 0
+                    else:
+                        if self.darkAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
+                            for i in range(0, 8):
+                                for j in range(0, 8):
+                                    self.availablePositions[i][j] = 0
+                            return
+
+                        # find the attacking piece
+                        attackingPiece = None
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if self.darkAttackLayout[i][j] == 5 or self.darkAttackLayout[i][j] == 6:
+                                    attackingPiece = self.piecesMatrix[i][j]
 
 
+                        match attackingPiece.getType():
+                            case PieceType.PAWN:
+                                for i in range(0, 8):
+                                    for j in range(0, 8):
+                                        if i == attackingPiece.getCoords()[0] and j == attackingPiece.getCoords()[1] \
+                                                and self.availablePositions[i][j] == 2:
+                                            self.availablePositions[i][j] = 2
+                                        else:
+                                            self.availablePositions[i][j] = 0
 
-                for i in range(0, 8):
-                    for j in range(0, 8):
-                        self.availablePositions[i][j] = 0
-                self.updateColors()
+                            case PieceType.KNIGHT:
+                                for i in range(0, 8):
+                                    for j in range(0, 8):
+                                        if i == attackingPiece.getCoords()[0] and j == attackingPiece.getCoords()[1] and \
+                                                self.availablePositions[i][j] == 2:
+                                            self.availablePositions[i][j] = 2
+                                        else:
+                                            self.availablePositions[i][j] = 0
+
+                            case PieceType.QUEEN:
+                                kingX = self.lightKing.getCoords()[0]
+                                kingY = self.lightKing.getCoords()[1]
+                                attX = attackingPiece.getCoords()[0]
+                                attY = attackingPiece.getCoords()[1]
+
+                                rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                # init a helper matrix
+                                helper = []
+                                for i in range(0, 8):
+                                    row = []
+                                    for j in range(0, 8):
+                                        row.append(0)
+                                    helper.append(row)
+
+                                i = attX
+                                j = attY
+
+                                while True:
+                                    if self.availablePositions[i][j] != 0:
+                                        helper[i][j] = self.availablePositions[i][j]
+
+                                    i += rowOrder
+                                    j += columnOrder
+
+                                    if i == kingX and j == kingY:
+                                        break
+
+                                self.availablePositions = helper
+
+                            case PieceType.BISHOP:
+                                kingX = self.lightKing.getCoords()[0]
+                                kingY = self.lightKing.getCoords()[1]
+                                attX = attackingPiece.getCoords()[0]
+                                attY = attackingPiece.getCoords()[1]
+
+                                rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                # init a helper matrix
+                                helper = []
+                                for i in range(0, 8):
+                                    row = []
+                                    for j in range(0, 8):
+                                        row.append(0)
+                                    helper.append(row)
+
+                                i = attX
+                                j = attY
+
+                                while True:
+                                    if self.availablePositions[i][j] != 0:
+                                        helper[i][j] = self.availablePositions[i][j]
+
+                                    i += rowOrder
+                                    j += columnOrder
+
+                                    if i == kingX and j == kingY:
+                                        break
+
+                                self.availablePositions = helper
+
+                            case PieceType.ROOK:
+                                kingX = self.lightKing.getCoords()[0]
+                                kingY = self.lightKing.getCoords()[1]
+                                attX = attackingPiece.getCoords()[0]
+                                attY = attackingPiece.getCoords()[1]
+
+                                rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                # init a helper matrix
+                                helper = []
+                                for i in range(0, 8):
+                                    row = []
+                                    for j in range(0, 8):
+                                        row.append(0)
+                                    helper.append(row)
+
+                                i = attX
+                                j = attY
+
+                                while True:
+                                    if self.availablePositions[i][j] != 0:
+                                        helper[i][j] = self.availablePositions[i][j]
+
+                                    i += rowOrder
+                                    j += columnOrder
+
+                                    if i == kingX and j == kingY:
+                                        break
+
+                                self.availablePositions = helper
+
+                    return
+
+                # "last man standing" -> this piece prevents a check, it can only move to the attacking piece,
+                # or on the attacking way
+                if self.darkAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
+                    # init a helper matrix
+                    helper = []
+                    for i in range(0, 8):
+                        row = []
+                        for j in range(0, 8):
+                            row.append(0)
+                        helper.append(row)
+
+                    # attacking piece is on the horizontal line
+                    if self.lightKing.getCoords()[0] == self.selectedPieceCoords[0]:
+                        attX = self.selectedPieceCoords[0]
+                        # attacking piece on the left
+                        if self.lightKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            for k in range(self.selectedPieceCoords[1] - 1, -1, -1):
+                                if self.availablePositions[attX][k] == 1:
+                                    helper[attX][k] = 1
+                                if self.availablePositions[attX][k] == 2:
+                                    helper[attX][k] = 2
+                                    break
+                        else:
+                            # attacking piece on the right
+                            for k in range(self.selectedPieceCoords[1] + 1, 8):
+                                if self.availablePositions[attX][k] == 1:
+                                    helper[attX][k] = 1
+                                if self.availablePositions[attX][k] == 2:
+                                    helper[attX][k] = 2
+                                    break
+
+                        self.availablePositions = helper
+                        return
+
+                    # attacking piece is on the vertical line
+                    if self.lightKing.getCoords()[1] == self.selectedPieceCoords[1]:
+                        attY = self.selectedPieceCoords[1]
+                        # attacking piece is up
+                        if self.lightKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                            for k in range(self.selectedPieceCoords[0] - 1, -1, -1):
+                                if self.availablePositions[k][attY] == 1:
+                                    helper[k][attY] = 1
+                                if self.availablePositions[k][attY] == 2:
+                                    helper[k][attY] = 2
+                                    break
+                        else:
+                            # attacking piece is down
+                            for k in range(self.selectedPieceCoords[0] + 1, 8):
+                                if self.availablePositions[k][attY] == 1:
+                                    helper[k][attY] = 1
+                                if self.availablePositions[k][attY] == 2:
+                                    helper[k][attY] = 2
+                                    break
+
+                        self.availablePositions = helper
+                        return
+
+                    # attacking piece is on a diagonal
+
+                    # d1
+                    if self.lightKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                        if self.lightKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            attX = self.selectedPieceCoords[0] - 1
+                            attY = self.selectedPieceCoords[1] - 1
+
+                            for k in range(attX, -1, -1):
+                                for l in range(attY, -1, -1):
+                                    if k < 0 or l < 0:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+                        self.availablePositions = helper
+                        return
+
+                    # d2
+                    if self.lightKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                        if self.lightKing.getCoords()[1] - self.selectedPieceCoords[1] < 0:
+                            attX = self.selectedPieceCoords[0] - 1
+                            attY = self.selectedPieceCoords[1] + 1
+
+                            for k in range(attX, -1, -1):
+                                for l in range(attY, 8):
+                                    if k < 0 or l > 7:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+
+                    # d3
+                    if self.lightKing.getCoords()[0] - self.selectedPieceCoords[0] < 0:
+                        if self.lightKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            attX = self.selectedPieceCoords[0] + 1
+                            attY = self.selectedPieceCoords[1] - 1
+
+                            for k in range(attX, 8):
+                                for l in range(attY, -1, -1):
+                                    if k > 7 or l < 0:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+
+                    # d4
+                    if self.lightKing.getCoords()[0] - self.selectedPieceCoords[0] < 0:
+                        if self.lightKing.getCoords()[1] - self.selectedPieceCoords[1] < 0:
+                            attX = self.selectedPieceCoords[0] + 1
+                            attY = self.selectedPieceCoords[1] + 1
+
+                            for k in range(attX, 8):
+                                for l in range(attY, 8):
+                                    if k > 7 or l > 7:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+                return
+
+            case Color.DARK:
+                if self.darkKingIsChecked():
+                    if self.selectedPiece.getType() == PieceType.KING:
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if (self.availablePositions[i][j] == 1 and self.lightAttackLayout[i][j] == 1) \
+                                        or (self.availablePositions[i][j] == 2 and
+                                            (self.lightAttackLayout[i][j] == 3 or self.lightAttackLayout[i][j] == 6)):
+                                    self.availablePositions[i][j] = 0
+                    else:
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if self.lightAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
+                                    for i in range(0, 8):
+                                        for j in range(0, 8):
+                                            self.availablePositions[i][j] = 0
+                                    return
+
+                                # find the attacking piece
+                                attackingPiece = None
+                                for i in range(0, 8):
+                                    for j in range(0, 8):
+                                        if self.lightAttackLayout[i][j] == 5 or self.lightAttackLayout[i][j] == 6:
+                                            attackingPiece = self.piecesMatrix[i][j]
+
+                                match attackingPiece.getType():
+                                    case PieceType.PAWN:
+                                        for i in range(0, 8):
+                                            for j in range(0, 8):
+                                                if i == attackingPiece.getCoords()[0] and j == \
+                                                        attackingPiece.getCoords()[1] \
+                                                        and self.availablePositions[i][j] == 2:
+                                                    self.availablePositions[i][j] = 2
+                                                else:
+                                                    self.availablePositions[i][j] = 0
+
+                                    case PieceType.KNIGHT:
+                                        for i in range(0, 8):
+                                            for j in range(0, 8):
+                                                if i == attackingPiece.getCoords()[0] and j == \
+                                                        attackingPiece.getCoords()[1] and \
+                                                        self.availablePositions[i][j] == 2:
+                                                    self.availablePositions[i][j] = 2
+                                                else:
+                                                    self.availablePositions[i][j] = 0
+
+                                    case PieceType.QUEEN:
+                                        kingX = self.darkKing.getCoords()[0]
+                                        kingY = self.darkKing.getCoords()[1]
+                                        attX = attackingPiece.getCoords()[0]
+                                        attY = attackingPiece.getCoords()[1]
+
+                                        rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                        columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                        # init a helper matrix
+                                        helper = []
+                                        for i in range(0, 8):
+                                            row = []
+                                            for j in range(0, 8):
+                                                row.append(0)
+                                            helper.append(row)
+
+                                        i = attX
+                                        j = attY
+
+                                        while True:
+                                            if self.availablePositions[i][j] != 0:
+                                                helper[i][j] = self.availablePositions[i][j]
+
+                                            i += rowOrder
+                                            j += columnOrder
+
+                                            if i == kingX and j == kingY:
+                                                break
+
+                                        self.availablePositions = helper
+
+                                    case PieceType.BISHOP:
+                                        kingX = self.darkKing.getCoords()[0]
+                                        kingY = self.darkKing.getCoords()[1]
+                                        attX = attackingPiece.getCoords()[0]
+                                        attY = attackingPiece.getCoords()[1]
+
+                                        rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                        columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                        # init a helper matrix
+                                        helper = []
+                                        for i in range(0, 8):
+                                            row = []
+                                            for j in range(0, 8):
+                                                row.append(0)
+                                            helper.append(row)
+
+                                        i = attX
+                                        j = attY
+
+                                        while True:
+                                            if self.availablePositions[i][j] != 0:
+                                                helper[i][j] = self.availablePositions[i][j]
+
+                                            i += rowOrder
+                                            j += columnOrder
+
+                                            if i == kingX and j == kingY:
+                                                break
+
+                                        self.availablePositions = helper
+
+                                    case PieceType.ROOK:
+                                        kingX = self.darkKing.getCoords()[0]
+                                        kingY = self.darkKing.getCoords()[1]
+                                        attX = attackingPiece.getCoords()[0]
+                                        attY = attackingPiece.getCoords()[1]
+
+                                        rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 1 else 0
+                                        columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 1 else 0
+
+                                        # init a helper matrix
+                                        helper = []
+                                        for i in range(0, 8):
+                                            row = []
+                                            for j in range(0, 8):
+                                                row.append(0)
+                                            helper.append(row)
+
+                                        i = attX
+                                        j = attY
+
+                                        while True:
+                                            if self.availablePositions[i][j] != 0:
+                                                helper[i][j] = self.availablePositions[i][j]
+
+                                            i += rowOrder
+                                            j += columnOrder
+
+                                            if i == kingX and j == kingY:
+                                                break
+
+                                        self.availablePositions = helper
+                    return
+
+                # "last man standing" -> this piece prevents a check, it can only move to the attacking piece,
+                # or on the attacking way
+                if self.lightAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
+                    # init a helper matrix
+                    helper = []
+                    for i in range(0, 8):
+                        row = []
+                        for j in range(0, 8):
+                            row.append(0)
+                        helper.append(row)
+
+                    # attacking piece is on the horizontal line
+                    if self.darkKing.getCoords()[0] == self.selectedPieceCoords[0]:
+                        attX = self.selectedPieceCoords[0]
+                        # attacking piece on the left
+                        if self.darkKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            for k in range(self.selectedPieceCoords[1] - 1, -1, -1):
+                                if self.availablePositions[attX][k] == 1:
+                                    helper[attX][k] = 1
+                                if self.availablePositions[attX][k] == 2:
+                                    helper[attX][k] = 2
+                                    break
+                        else:
+                            # attacking piece on the right
+                            for k in range(self.selectedPieceCoords[1] + 1, 8):
+                                if self.availablePositions[attX][k] == 1:
+                                    helper[attX][k] = 1
+                                if self.availablePositions[attX][k] == 2:
+                                    helper[attX][k] = 2
+                                    break
+
+                        self.availablePositions = helper
+                        return
+
+                    # attacking piece is on the vertical line
+                    if self.darkKing.getCoords()[1] == self.selectedPieceCoords[1]:
+                        attY = self.selectedPieceCoords[1]
+                        # attacking piece is up
+                        if self.darkKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                            for k in range(self.selectedPieceCoords[0] - 1, -1, -1):
+                                if self.availablePositions[k][attY] == 1:
+                                    helper[k][attY] = 1
+                                if self.availablePositions[k][attY] == 2:
+                                    helper[k][attY] = 2
+                                    break
+                        else:
+                            # attacking piece is down
+                            for k in range(self.selectedPieceCoords[0] + 1, 8):
+                                if self.availablePositions[k][attY] == 1:
+                                    helper[k][attY] = 1
+                                if self.availablePositions[k][attY] == 2:
+                                    helper[k][attY] = 2
+                                    break
+
+                        self.availablePositions = helper
+                        return
+
+                    # attacking piece is on a diagonal
+
+                    # d1
+                    if self.darkKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                        if self.darkKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            attX = self.selectedPieceCoords[0] - 1
+                            attY = self.selectedPieceCoords[1] - 1
+
+                            for k in range(attX, -1, -1):
+                                for l in range(attY, -1, -1):
+                                    if k < 0 or l < 0:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+                        self.availablePositions = helper
+                        return
+
+                    # d2
+                    if self.darkKing.getCoords()[0] - self.selectedPieceCoords[0] > 0:
+                        if self.darkKing.getCoords()[1] - self.selectedPieceCoords[1] < 0:
+                            attX = self.selectedPieceCoords[0] - 1
+                            attY = self.selectedPieceCoords[1] + 1
+
+                            for k in range(attX, -1, -1):
+                                for l in range(attY, 8):
+                                    if k < 0 or l > 7:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+
+                    # d3
+                    if self.darkKing.getCoords()[0] - self.selectedPieceCoords[0] < 0:
+                        if self.darkKing.getCoords()[1] - self.selectedPieceCoords[1] > 0:
+                            attX = self.selectedPieceCoords[0] + 1
+                            attY = self.selectedPieceCoords[1] - 1
+
+                            for k in range(attX, 8):
+                                for l in range(attY, -1, -1):
+                                    if k > 7 or l < 0:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+
+                    # d4
+                    if self.darkKing.getCoords()[0] - self.selectedPieceCoords[0] < 0:
+                        if self.darkKing.getCoords()[1] - self.selectedPieceCoords[1] < 0:
+                            attX = self.selectedPieceCoords[0] + 1
+                            attY = self.selectedPieceCoords[1] + 1
+
+                            for k in range(attX, 8):
+                                for l in range(attY, 8):
+                                    if k > 7 or l > 7:
+                                        break
+                                    if self.availablePositions[k][l] == 1:
+                                        helper[k][l] = 1
+                                    if self.availablePositions[k][l] == 2:
+                                        helper[k][l] = 2
+                                        break
+
+                        self.availablePositions = helper
+                        return
+
+                return
+
+    def simpleMove(self, coords):
+        self.piecesMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] = None
+        self.piecesMatrix[coords[0]][coords[1]] = self.selectedPiece
+        self.selectedPiece.setCoords(coords)
+
+        movingPieceImage = self.buttonMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]].cget('image')
+        self.buttonMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]].configure(image='')
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=movingPieceImage)
+
+        self.selectedPiece = None
+        self.selectedPieceCoords = None
+
+    def attackPiece(self, coords):
+        removedPiece = self.piecesMatrix[coords[0]][coords[1]]
+        removedPieceImage = self.buttonMatrix[coords[0]][coords[1]].cget('image')
+        # needs to be added to a list or sth
+        self.simpleMove(coords)
+
+    def changeTurn(self):
+        if self.turn == Color.DARK:
+            self.updateDarkAttackLayout()
+            self.turn = Color.LIGHT
+        else:
+            self.updateLightAttackLayout()
+            self.turn = Color.DARK
 
     def updateColors(self):
         for i in range(0, 8):
@@ -303,10 +916,19 @@ class Game:
                         self.buttonMatrix[i][j].configure(bg=SquareColor.AVAILABLE.value)
                     case 2:
                         self.buttonMatrix[i][j].configure(bg=SquareColor.ATTACK.value)
+                    case 4:
+                        self.buttonMatrix[i][j].configure(bg=SquareColor.ATTACK.value)
                     case _:
                         self.buttonMatrix[i][j].configure(
                             bg=SquareColor.LIGHT.value if (i + j) % 2 == 0 else SquareColor.DARK.value)
 
+    def resetColors(self):
+        for i in range(0, 8):
+            for j in range(0, 8):
+                self.availablePositions[i][j] = 0
+        self.updateColors()
+
+    # unused method
     def moveSelectedPiece(self, coords):
         # change de piece matrix
         removedPiece = self.piecesMatrix[coords[0]][coords[1]]
@@ -333,30 +955,9 @@ class Game:
 
     def darkKingIsChecked(self):
         return self.lightAttackLayout[self.darkKing.getCoords()[0]][self.darkKing.getCoords()[1]] == 2
+
     def lightKingIsChecked(self):
         return self.darkAttackLayout[self.lightKing.getCoords()[0]][self.lightKing.getCoords()[1]] == 2
-        # currKing = self.lightKing if self.turn == Color.LIGHT else self.darkKing
-        #
-        # print(currKing.getColor())
-        # for i in range(0, 8):
-        #     for j in range(0, 8):
-        #         if self.piecesMatrix[i][j] is None:
-        #             continue
-        #         if self.piecesMatrix[i][j].getColor() != currKing.getColor():
-        #             # create an auxiliary position matrix
-        #             aux = []
-        #             for l in range(0, 8):
-        #                 row = []
-        #                 for k in range(0, 8):
-        #                     row.append(0)
-        #                 aux.append(row)
-        #
-        #             # find this piece's attacking direction
-        #             self.piecesMatrix[i][j].setAvailablePositions(aux, self.piecesMatrix)
-        #
-        #             if aux[currKing.getCoords()[0]][currKing.getCoords()[1]] == 2:
-        #                 print(currKing.getColor())
-        #                 print("isChecked")
 
 
     def updateDarkAttackLayout(self):
@@ -371,7 +972,7 @@ class Game:
                 if self.piecesMatrix[i][j].getColor() == Color.LIGHT:
                     continue
 
-                if self.darkAttackLayout[i][j] != 3:
+                if self.darkAttackLayout[i][j] == 0:
                     self.darkAttackLayout[i][j] = -1
 
                 # create an auxiliary position matrix
@@ -396,7 +997,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.darkAttackLayout[k][l] == -1:
+                                        self.darkAttackLayout[k][l] = 5
+                                    else:
+                                        self.darkAttackLayout[k][l] = 6
 
                     case PieceType.QUEEN:
                         for k in range(0, 8):
@@ -408,7 +1019,18 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.darkAttackLayout[k][l] == -1:
+                                        self.darkAttackLayout[k][l] = 5
+                                    else:
+                                        self.darkAttackLayout[k][l] = 6
+
                     case PieceType.KNIGHT:
                         for k in range(0, 8):
                             for l in range(0, 8):
@@ -419,7 +1041,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.darkAttackLayout[k][l] == -1:
+                                        self.darkAttackLayout[k][l] = 5
+                                    else:
+                                        self.darkAttackLayout[k][l] = 6
 
                     case PieceType.BISHOP:
                         for k in range(0, 8):
@@ -431,7 +1063,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.darkAttackLayout[k][l] == -1:
+                                        self.darkAttackLayout[k][l] = 5
+                                    else:
+                                        self.darkAttackLayout[k][l] = 6
 
                     case PieceType.ROOK:
                         for k in range(0, 8):
@@ -443,7 +1085,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.darkAttackLayout[k][l] == -1:
+                                        self.darkAttackLayout[k][l] = 5
+                                    else:
+                                        self.darkAttackLayout[k][l] = 6
                     case PieceType.KING:
                         for k in range(0, 8):
                             for l in range(0, 8):
@@ -454,7 +1106,12 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.darkAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.darkAttackLayout[k][l] = 3
+                                    if self.darkAttackLayout[k][l] == 5:
+                                        self.darkAttackLayout[k][l] = 6
+                                    else:
+                                        self.darkAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.darkAttackLayout[k][l] = 4
 
     def updateLightAttackLayout(self):
         for i in range(0, 8):
@@ -468,7 +1125,7 @@ class Game:
                 if self.piecesMatrix[i][j].getColor() == Color.DARK:
                     continue
 
-                if self.lightAttackLayout[i][j] != 3:
+                if self.lightAttackLayout[i][j] == 0:
                     self.lightAttackLayout[i][j] = -1
 
                 # create an auxiliary position matrix
@@ -493,7 +1150,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.lightAttackLayout[k][l] == -1:
+                                        self.lightAttackLayout[k][l] = 5
+                                    else:
+                                        self.lightAttackLayout[k][l] = 6
 
                     case PieceType.QUEEN:
                         for k in range(0, 8):
@@ -505,7 +1172,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.lightAttackLayout[k][l] == -1:
+                                        self.lightAttackLayout[k][l] = 5
+                                    else:
+                                        self.lightAttackLayout[k][l] = 6
                     case PieceType.KNIGHT:
                         for k in range(0, 8):
                             for l in range(0, 8):
@@ -516,7 +1193,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.lightAttackLayout[k][l] == -1:
+                                        self.lightAttackLayout[k][l] = 5
+                                    else:
+                                        self.lightAttackLayout[k][l] = 6
 
                     case PieceType.BISHOP:
                         for k in range(0, 8):
@@ -528,7 +1215,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.lightAttackLayout[k][l] == -1:
+                                        self.lightAttackLayout[k][l] = 5
+                                    else:
+                                        self.lightAttackLayout[k][l] = 6
 
                     case PieceType.ROOK:
                         for k in range(0, 8):
@@ -540,7 +1237,17 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
+                                if aux[k][l] == 5:
+                                    if self.lightAttackLayout[k][l] == -1:
+                                        self.lightAttackLayout[k][l] = 5
+                                    else:
+                                        self.lightAttackLayout[k][l] = 6
                     case PieceType.KING:
                         for k in range(0, 8):
                             for l in range(0, 8):
@@ -551,6 +1258,9 @@ class Game:
                                 if aux[k][l] == 2:
                                     self.lightAttackLayout[k][l] = 2
                                 if aux[k][l] == 3:
-                                    self.lightAttackLayout[k][l] = 3
-
-
+                                    if self.lightAttackLayout[k][l] == 5:
+                                        self.lightAttackLayout[k][l] = 6
+                                    else:
+                                        self.lightAttackLayout[k][l] = 3
+                                if aux[k][l] == 4:
+                                    self.lightAttackLayout[k][l] = 4
