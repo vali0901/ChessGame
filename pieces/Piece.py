@@ -163,6 +163,7 @@ class King(Piece):
         currX = self.x
         currY = self.y
 
+        # might not be complete
         for i in range(currX - 1, currX + 2):
             for j in range(currY - 1, currY + 2):
                 if i < 0 or j < 0 or i > 7 or j > 7:
@@ -171,7 +172,6 @@ class King(Piece):
                 if pPos[i][j] is None:
                     aPos[i][j] = 1
                 else:
-                    # needs another check that verifies if the king will be in check in this position
                     if pPos[i][j].getColor() != self.getColor():
                         aPos[i][j] = 2
                     else:
@@ -190,238 +190,302 @@ class Queen(Piece):
         currX = self.x
         currY = self.y
 
-        # check the horizontal line
-        for j in range(currY - 1, -1, -1):
-            if j < 0:
-                continue
+        for rowOrder in range(-1, 2):
+            for columnOrder in range(-1, 2):
 
-            if pPos[currX][j] is None:
-                aPos[currX][j] = 1
-            else:
-                if pPos[currX][j].getColor() != self.color:
-                    if pPos[currX][j].getType() == PieceType.KING:
-                        aPos[currX][j] = 2
-                        # mark it as direct attacker of the king
-                        aPos[self.x][self.y] = 5
+                i = currX + rowOrder
+                j = currY + columnOrder
+
+                while True:
+
+                    # if i == self.x and j == self.y:
+                    #     i += rowOrder
+                    #     j += columnOrder
+                    #     continue
+
+                    if i < 0 or i > 7 or j < 0 or j > 7:
                         break
 
-                    aPos[currX][j] = 2
-                    for k in range(j - 1, -1, -1):
-                        if k < 0:
-                            continue
-
-                        if pPos[currX][k] is None:
-                            continue
-
-                        if pPos[currX][k].getColor() != self.color \
-                                and pPos[currX][k].getType() == PieceType.KING:
-                            aPos[currX][j] = 4
-                        break
-
-                else:
-                    aPos[currX][j] = 3
-                break
-
-        for j in range(currY + 1, 8):
-            if j > 7:
-                continue
-            if pPos[currX][j] is None:
-                aPos[currX][j] = 1
-            else:
-                if pPos[currX][j].getColor() != self.color:
-                    if pPos[currX][j].getType() == PieceType.KING:
-                        aPos[currX][j] = 2
-                        # mark it as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    aPos[currX][j] = 2
-                    for k in range(j + 1, 8):
-                        if k > 7:
-                            continue
-
-                        if pPos[currX][k] is None:
-                            continue
-
-                        if pPos[currX][k].getColor() != self.color \
-                                and pPos[currX][k].getType() == PieceType.KING:
-                            aPos[currX][j] = 4
-                        break
-                else:
-                    aPos[currX][j] = 3
-                break
-
-        # check the vertical line
-        for i in range(currX - 1, -1, -1):
-            if i < 0:
-                continue
-            if pPos[i][currY] is None:
-                aPos[i][currY] = 1
-            else:
-                if pPos[i][currY].getColor() != self.color:
-                    if pPos[i][currY].getType() == PieceType.KING:
-                        aPos[i][currY] = 2
-                        # mark it as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    aPos[i][currY] = 2
-                    for k in range(i - 1, -1, -1):
-                        if k < 0:
-                            continue
-
-                        if pPos[k][currY] is None:
-                            continue
-
-                        if pPos[k][currY].getColor() != self.color \
-                                and pPos[k][currY].getType() == PieceType.KING:
-                            aPos[i][currY] = 4
-                        break
-                else:
-                    aPos[i][currY] = 3
-                break
-
-        for i in range(currX + 1, 8):
-            if i > 7:
-                continue
-
-            if pPos[i][currY] is None:
-                aPos[i][currY] = 1
-            else:
-                if pPos[i][currY].getColor() != self.color:
-                    if pPos[i][currY].getType() == PieceType.KING:
-                        aPos[i][currY] = 2
-                        # mark this piece as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    aPos[i][currY] = 2
-                    for k in range(i + 1, 8):
-                        if k > 7:
-                            continue
-
-                        if pPos[k][currY] is None:
-                            continue
-
-                        if pPos[k][currY].getColor() != self.color \
-                                and pPos[k][currY].getType() == PieceType.KING:
-                            aPos[i][currY] = 4
-                        break
-                else:
-                    aPos[i][currY] = 3
-
-                break
-
-        # check diagonal lines
-        d1 = d2 = d3 = d4 = 0
-        for k in range(1, 8):
-            if d1 == 0 and currX + k < 8 and currY + k < 8:
-                if pPos[currX + k][currY + k] is None:
-                    aPos[currX + k][currY + k] = 1
-                else:
-                    if pPos[currX + k][currY + k].getColor() != self.color:
-                        aPos[currX + k][currY + k] = 2
-
-                        if pPos[currX + k][currY + k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
-
-                        for l in range(k + 1, 8):
-                            if currX + l < 8 and currY + l < 8:
-                                if pPos[currX + l][currY + l] is None:
-                                    continue
-
-                                if pPos[currX + l][currY + l].getColor() != self.color \
-                                        and pPos[currX + l][currY + l].getType() == PieceType.KING:
-                                    aPos[currX + k][currY + k] = 4
-
-                                break
+                    if pPos[i][j] is None:
+                        aPos[i][j] = 1
                     else:
-                        aPos[currX + k][currY + k] = 3
-                    d1 = 1
-            else:
-                d1 = 1
-
-            if d2 == 0 and currX - k >= 0 and currY + k < 8:
-                if pPos[currX - k][currY + k] is None:
-                    aPos[currX - k][currY + k] = 1
-                else:
-                    if pPos[currX - k][currY + k].getColor() != self.color:
-                        aPos[currX - k][currY + k] = 2
-
-                        if pPos[currX - k][currY + k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
-
-                        for l in range(k + 1, 8):
-                            if currX - l >= 0 and currY + l < 8:
-                                if pPos[currX - l][currY + l] is None:
-                                    continue
-
-                                if pPos[currX - l][currY + l].getColor() != self.color \
-                                        and pPos[currX - l][currY + l].getType() == PieceType.KING:
-                                    aPos[currX - k][currY + k] = 4
-
+                        if pPos[i][j].getColor() != self.color:
+                            aPos[i][j] = 2
+                            if pPos[i][j].getType() == PieceType.KING:
+                                # mark it as direct attacker of the king
+                                aPos[self.x][self.y] = 5
                                 break
-                    else:
-                        aPos[currX - k][currY + k] = 3
-                    d2 = 1
-            else:
-                d2 = 1
 
-            if d3 == 0 and currX + k < 8 and currY - k >= 0:
-                if pPos[currX + k][currY - k] is None:
-                    aPos[currX + k][currY - k] = 1
-                else:
-                    if pPos[currX + k][currY - k].getColor() != self.color:
-                        aPos[currX + k][currY - k] = 2
+                            k = i + rowOrder
+                            l = j + columnOrder
 
-                        if pPos[currX + k][currY - k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
+                            while True:
+                                if k < 0 or k > 7 or l < 0 or l > 7:
+                                    break
 
-                        for l in range(k + 1, 8):
-                            if currX + l < 8 and currY - l >= 0:
-                                if pPos[currX + l][currY - l] is None:
-                                    continue
+                                if pPos[k][l] is not None and pPos[k][l].getColor() == self.color:
+                                    break;
 
-                                if pPos[currX + l][currY - l].getColor() != self.color \
-                                        and pPos[currX + l][currY - l].getType() == PieceType.KING:
-                                    aPos[currX + k][currY - k] = 4
+                                if pPos[k][l] is not None and pPos[k][l].getColor() != self.color \
+                                        and pPos[k][l].getType() == PieceType.KING:
+                                    aPos[i][j] = 4
+                                    break
 
-                                break
-                    else:
-                        aPos[currX + k][currY - k] = 3
-                    d3 = 1
-            else:
-                d3 = 1
+                                k += rowOrder
+                                l += columnOrder
 
-            if d4 == 0 and currX - k >= 0 and currY - k >= 0:
-                if pPos[currX - k][currY - k] is None:
-                    aPos[currX - k][currY - k] = 1
-                else:
-                    if pPos[currX - k][currY - k].getColor() != self.color:
-                        aPos[currX - k][currY - k] = 2
+                            # for k in range(j - 1, -1, -1):
+                            #     if k < 0:
+                            #         continue
+                            #
+                            #     if pPos[currX][k] is None:
+                            #         continue
+                            #
+                            #     if pPos[currX][k].getColor() != self.color \
+                            #             and pPos[currX][k].getType() == PieceType.KING:
+                            #         aPos[currX][j] = 4
+                            #     break
 
-                        if pPos[currX - k][currY - k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
+                        else:
+                            if pPos[i][j] != self:
+                                aPos[i][j] = 3
+                        break
 
-                        for l in range(k + 1, 8):
-                            if currX - l >= 0 and currY -l >= 0:
-                                if pPos[currX - l][currY - l] is None:
-                                    continue
+                    i += rowOrder
+                    j += columnOrder
 
-                                if pPos[currX - l][currY - l].getColor() != self.color \
-                                        and pPos[currX - l][currY - l].getType() == PieceType.KING:
-                                    aPos[currX - k][currY - k] = 4
-
-                                break
-                    else:
-                        aPos[currX - k][currY - k] = 3
-                    d4 = 1
-            else:
-                d4 = 1
+        # # check the horizontal line
+        # for j in range(currY - 1, -1, -1):
+        #     if j < 0:
+        #         continue
+        #
+        #     if pPos[currX][j] is None:
+        #         aPos[currX][j] = 1
+        #     else:
+        #         if pPos[currX][j].getColor() != self.color:
+        #             if pPos[currX][j].getType() == PieceType.KING:
+        #                 aPos[currX][j] = 2
+        #                 # mark it as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             aPos[currX][j] = 2
+        #             for k in range(j - 1, -1, -1):
+        #                 if k < 0:
+        #                     continue
+        #
+        #                 if pPos[currX][k] is None:
+        #                     continue
+        #
+        #                 if pPos[currX][k].getColor() != self.color \
+        #                         and pPos[currX][k].getType() == PieceType.KING:
+        #                     aPos[currX][j] = 4
+        #                 break
+        #
+        #         else:
+        #             aPos[currX][j] = 3
+        #         break
+        #
+        # for j in range(currY + 1, 8):
+        #     if j > 7:
+        #         continue
+        #     if pPos[currX][j] is None:
+        #         aPos[currX][j] = 1
+        #     else:
+        #         if pPos[currX][j].getColor() != self.color:
+        #             if pPos[currX][j].getType() == PieceType.KING:
+        #                 aPos[currX][j] = 2
+        #                 # mark it as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             aPos[currX][j] = 2
+        #             for k in range(j + 1, 8):
+        #                 if k > 7:
+        #                     continue
+        #
+        #                 if pPos[currX][k] is None:
+        #                     continue
+        #
+        #                 if pPos[currX][k].getColor() != self.color \
+        #                         and pPos[currX][k].getType() == PieceType.KING:
+        #                     aPos[currX][j] = 4
+        #                 break
+        #         else:
+        #             aPos[currX][j] = 3
+        #         break
+        #
+        # # check the vertical line
+        # for i in range(currX - 1, -1, -1):
+        #     if i < 0:
+        #         continue
+        #     if pPos[i][currY] is None:
+        #         aPos[i][currY] = 1
+        #     else:
+        #         if pPos[i][currY].getColor() != self.color:
+        #             if pPos[i][currY].getType() == PieceType.KING:
+        #                 aPos[i][currY] = 2
+        #                 # mark it as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             aPos[i][currY] = 2
+        #             for k in range(i - 1, -1, -1):
+        #                 if k < 0:
+        #                     continue
+        #
+        #                 if pPos[k][currY] is None:
+        #                     continue
+        #
+        #                 if pPos[k][currY].getColor() != self.color \
+        #                         and pPos[k][currY].getType() == PieceType.KING:
+        #                     aPos[i][currY] = 4
+        #                 break
+        #         else:
+        #             aPos[i][currY] = 3
+        #         break
+        #
+        # for i in range(currX + 1, 8):
+        #     if i > 7:
+        #         continue
+        #
+        #     if pPos[i][currY] is None:
+        #         aPos[i][currY] = 1
+        #     else:
+        #         if pPos[i][currY].getColor() != self.color:
+        #             if pPos[i][currY].getType() == PieceType.KING:
+        #                 aPos[i][currY] = 2
+        #                 # mark this piece as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             aPos[i][currY] = 2
+        #             for k in range(i + 1, 8):
+        #                 if k > 7:
+        #                     continue
+        #
+        #                 if pPos[k][currY] is None:
+        #                     continue
+        #
+        #                 if pPos[k][currY].getColor() != self.color \
+        #                         and pPos[k][currY].getType() == PieceType.KING:
+        #                     aPos[i][currY] = 4
+        #                 break
+        #         else:
+        #             aPos[i][currY] = 3
+        #
+        #         break
+        #
+        # # check diagonal lines
+        # d1 = d2 = d3 = d4 = 0
+        # for k in range(1, 8):
+        #     if d1 == 0 and currX + k < 8 and currY + k < 8:
+        #         if pPos[currX + k][currY + k] is None:
+        #             aPos[currX + k][currY + k] = 1
+        #         else:
+        #             if pPos[currX + k][currY + k].getColor() != self.color:
+        #                 aPos[currX + k][currY + k] = 2
+        #
+        #                 if pPos[currX + k][currY + k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX + l < 8 and currY + l < 8:
+        #                         if pPos[currX + l][currY + l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX + l][currY + l].getColor() != self.color \
+        #                                 and pPos[currX + l][currY + l].getType() == PieceType.KING:
+        #                             aPos[currX + k][currY + k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX + k][currY + k] = 3
+        #             d1 = 1
+        #     else:
+        #         d1 = 1
+        #
+        #     if d2 == 0 and currX - k >= 0 and currY + k < 8:
+        #         if pPos[currX - k][currY + k] is None:
+        #             aPos[currX - k][currY + k] = 1
+        #         else:
+        #             if pPos[currX - k][currY + k].getColor() != self.color:
+        #                 aPos[currX - k][currY + k] = 2
+        #
+        #                 if pPos[currX - k][currY + k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX - l >= 0 and currY + l < 8:
+        #                         if pPos[currX - l][currY + l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX - l][currY + l].getColor() != self.color \
+        #                                 and pPos[currX - l][currY + l].getType() == PieceType.KING:
+        #                             aPos[currX - k][currY + k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX - k][currY + k] = 3
+        #             d2 = 1
+        #     else:
+        #         d2 = 1
+        #
+        #     if d3 == 0 and currX + k < 8 and currY - k >= 0:
+        #         if pPos[currX + k][currY - k] is None:
+        #             aPos[currX + k][currY - k] = 1
+        #         else:
+        #             if pPos[currX + k][currY - k].getColor() != self.color:
+        #                 aPos[currX + k][currY - k] = 2
+        #
+        #                 if pPos[currX + k][currY - k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX + l < 8 and currY - l >= 0:
+        #                         if pPos[currX + l][currY - l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX + l][currY - l].getColor() != self.color \
+        #                                 and pPos[currX + l][currY - l].getType() == PieceType.KING:
+        #                             aPos[currX + k][currY - k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX + k][currY - k] = 3
+        #             d3 = 1
+        #     else:
+        #         d3 = 1
+        #
+        #     if d4 == 0 and currX - k >= 0 and currY - k >= 0:
+        #         if pPos[currX - k][currY - k] is None:
+        #             aPos[currX - k][currY - k] = 1
+        #         else:
+        #             if pPos[currX - k][currY - k].getColor() != self.color:
+        #                 aPos[currX - k][currY - k] = 2
+        #
+        #                 if pPos[currX - k][currY - k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX - l >= 0 and currY -l >= 0:
+        #                         if pPos[currX - l][currY - l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX - l][currY - l].getColor() != self.color \
+        #                                 and pPos[currX - l][currY - l].getType() == PieceType.KING:
+        #                             aPos[currX - k][currY - k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX - k][currY - k] = 3
+        #             d4 = 1
+        #     else:
+        #         d4 = 1
 
 
 class Bishop(Piece):
@@ -436,116 +500,182 @@ class Bishop(Piece):
         currX = self.x
         currY = self.y
 
-        # check diagonal lines
-        d1 = d2 = d3 = d4 = 0
-        for k in range(1, 8):
-            if d1 == 0 and currX + k < 8 and currY + k < 8:
-                if pPos[currX + k][currY + k] is None:
-                    aPos[currX + k][currY + k] = 1
-                else:
-                    if pPos[currX + k][currY + k].getColor() != self.color:
-                        aPos[currX + k][currY + k] = 2
+        for rowOrder in range(-1, 2):
+            for columnOrder in range(-1, 2):
+                if rowOrder == 0 or columnOrder == 0:
+                    continue
 
-                        if pPos[currX + k][currY + k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
+                i = currX + rowOrder
+                j = currY + columnOrder
 
-                        for l in range(k + 1, 8):
-                            if currX + l < 8 and currY + l < 8:
-                                if pPos[currX + l][currY + l] is None:
-                                    continue
+                while True:
 
-                                if pPos[currX + l][currY + l].getColor() != self.color \
-                                        and pPos[currX + l][currY + l].getType() == PieceType.KING:
-                                    aPos[currX + k][currY + k] = 4
+                    # if i == self.x and j == self.y:
+                    #     i += rowOrder
+                    #     j += columnOrder
+                    #     continue
 
-                                break
+                    if i < 0 or i > 7 or j < 0 or j > 7:
+                        break
+
+                    if pPos[i][j] is None:
+                        aPos[i][j] = 1
                     else:
-                        aPos[currX + k][currY + k] = 3
-                    d1 = 1
-            else:
-                d1 = 1
-
-            if d2 == 0 and currX - k >= 0 and currY + k < 8:
-                if pPos[currX - k][currY + k] is None:
-                    aPos[currX - k][currY + k] = 1
-                else:
-                    if pPos[currX - k][currY + k].getColor() != self.color:
-                        aPos[currX - k][currY + k] = 2
-
-                        if pPos[currX - k][currY + k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
-
-                        for l in range(k + 1, 8):
-                            if currX - l >= 0 and currY + l < 8:
-                                if pPos[currX - l][currY + l] is None:
-                                    continue
-
-                                if pPos[currX - l][currY + l].getColor() != self.color \
-                                        and pPos[currX - l][currY + l].getType() == PieceType.KING:
-                                    aPos[currX - k][currY + k] = 4
-
+                        if pPos[i][j].getColor() != self.color:
+                            aPos[i][j] = 2
+                            if pPos[i][j].getType() == PieceType.KING:
+                                # mark it as direct attacker of the king
+                                aPos[self.x][self.y] = 5
                                 break
-                    else:
-                        aPos[currX - k][currY + k] = 3
-                    d2 = 1
-            else:
-                d2 = 1
 
-            if d3 == 0 and currX + k < 8 and currY - k >= 0:
-                if pPos[currX + k][currY - k] is None:
-                    aPos[currX + k][currY - k] = 1
-                else:
-                    if pPos[currX + k][currY - k].getColor() != self.color:
-                        aPos[currX + k][currY - k] = 2
+                            k = i + rowOrder
+                            l = j + columnOrder
 
-                        if pPos[currX + k][currY - k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
+                            while True:
+                                if k < 0 or k > 7 or l < 0 or l > 7:
+                                    break
 
-                        for l in range(k + 1, 8):
-                            if currX + l < 8 and currY - l >= 0:
-                                if pPos[currX + l][currY - l] is None:
-                                    continue
+                                if pPos[k][l] is not None and pPos[k][l].getColor() == self.color:
+                                    break;
 
-                                if pPos[currX + l][currY - l].getColor() != self.color \
-                                        and pPos[currX + l][currY - l].getType() == PieceType.KING:
-                                    aPos[currX + k][currY - k] = 4
+                                if pPos[k][l] is not None and pPos[k][l].getColor() != self.color \
+                                        and pPos[k][l].getType() == PieceType.KING:
+                                    aPos[i][j] = 4
+                                    break
 
-                                break
-                    else:
-                        aPos[currX + k][currY - k] = 3
-                    d3 = 1
-            else:
-                d3 = 1
+                                k += rowOrder
+                                l += columnOrder
 
-            if d4 == 0 and currX - k >= 0 and currY - k >= 0:
-                if pPos[currX - k][currY - k] is None:
-                    aPos[currX - k][currY - k] = 1
-                else:
-                    if pPos[currX - k][currY - k].getColor() != self.color:
-                        aPos[currX - k][currY - k] = 2
+                            # for k in range(j - 1, -1, -1):
+                            #     if k < 0:
+                            #         continue
+                            #
+                            #     if pPos[currX][k] is None:
+                            #         continue
+                            #
+                            #     if pPos[currX][k].getColor() != self.color \
+                            #             and pPos[currX][k].getType() == PieceType.KING:
+                            #         aPos[currX][j] = 4
+                            #     break
 
-                        if pPos[currX - k][currY - k].getType() == PieceType.KING:
-                            aPos[self.x][self.y] = 5
-                            break
+                        else:
+                            if pPos[i][j] != self:
+                                aPos[i][j] = 3
+                        break
 
-                        for l in range(k + 1, 8):
-                            if currX - l >= 0 and currY - l >= 0:
-                                if pPos[currX - l][currY - l] is None:
-                                    continue
+                    i += rowOrder
+                    j += columnOrder
 
-                                if pPos[currX - l][currY - l].getColor() != self.color \
-                                        and pPos[currX - l][currY - l].getType() == PieceType.KING:
-                                    aPos[currX - k][currY - k] = 4
-
-                                break
-                    else:
-                        aPos[currX - k][currY - k] = 3
-                    d4 = 1
-            else:
-                d4 = 1
+        # # check diagonal lines
+        # d1 = d2 = d3 = d4 = 0
+        # for k in range(1, 8):
+        #     if d1 == 0 and currX + k < 8 and currY + k < 8:
+        #         if pPos[currX + k][currY + k] is None:
+        #             aPos[currX + k][currY + k] = 1
+        #         else:
+        #             if pPos[currX + k][currY + k].getColor() != self.color:
+        #                 aPos[currX + k][currY + k] = 2
+        #
+        #                 if pPos[currX + k][currY + k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX + l < 8 and currY + l < 8:
+        #                         if pPos[currX + l][currY + l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX + l][currY + l].getColor() != self.color \
+        #                                 and pPos[currX + l][currY + l].getType() == PieceType.KING:
+        #                             aPos[currX + k][currY + k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX + k][currY + k] = 3
+        #             d1 = 1
+        #     else:
+        #         d1 = 1
+        #
+        #     if d2 == 0 and currX - k >= 0 and currY + k < 8:
+        #         if pPos[currX - k][currY + k] is None:
+        #             aPos[currX - k][currY + k] = 1
+        #         else:
+        #             if pPos[currX - k][currY + k].getColor() != self.color:
+        #                 aPos[currX - k][currY + k] = 2
+        #
+        #                 if pPos[currX - k][currY + k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX - l >= 0 and currY + l < 8:
+        #                         if pPos[currX - l][currY + l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX - l][currY + l].getColor() != self.color \
+        #                                 and pPos[currX - l][currY + l].getType() == PieceType.KING:
+        #                             aPos[currX - k][currY + k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX - k][currY + k] = 3
+        #             d2 = 1
+        #     else:
+        #         d2 = 1
+        #
+        #     if d3 == 0 and currX + k < 8 and currY - k >= 0:
+        #         if pPos[currX + k][currY - k] is None:
+        #             aPos[currX + k][currY - k] = 1
+        #         else:
+        #             if pPos[currX + k][currY - k].getColor() != self.color:
+        #                 aPos[currX + k][currY - k] = 2
+        #
+        #                 if pPos[currX + k][currY - k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX + l < 8 and currY - l >= 0:
+        #                         if pPos[currX + l][currY - l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX + l][currY - l].getColor() != self.color \
+        #                                 and pPos[currX + l][currY - l].getType() == PieceType.KING:
+        #                             aPos[currX + k][currY - k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX + k][currY - k] = 3
+        #             d3 = 1
+        #     else:
+        #         d3 = 1
+        #
+        #     if d4 == 0 and currX - k >= 0 and currY - k >= 0:
+        #         if pPos[currX - k][currY - k] is None:
+        #             aPos[currX - k][currY - k] = 1
+        #         else:
+        #             if pPos[currX - k][currY - k].getColor() != self.color:
+        #                 aPos[currX - k][currY - k] = 2
+        #
+        #                 if pPos[currX - k][currY - k].getType() == PieceType.KING:
+        #                     aPos[self.x][self.y] = 5
+        #                     break
+        #
+        #                 for l in range(k + 1, 8):
+        #                     if currX - l >= 0 and currY - l >= 0:
+        #                         if pPos[currX - l][currY - l] is None:
+        #                             continue
+        #
+        #                         if pPos[currX - l][currY - l].getColor() != self.color \
+        #                                 and pPos[currX - l][currY - l].getType() == PieceType.KING:
+        #                             aPos[currX - k][currY - k] = 4
+        #
+        #                         break
+        #             else:
+        #                 aPos[currX - k][currY - k] = 3
+        #             d4 = 1
+        #     else:
+        #         d4 = 1
 
 
 class Knight(Piece):
@@ -592,124 +722,191 @@ class Rook(Piece):
         currX = self.x
         currY = self.y
 
-        # check the horizontal line
-        for j in range(currY - 1, -1, -1):
-            if j < 0:
-                continue
+        for rowOrder in range(-1, 2):
+            for columnOrder in range(-1, 2):
+                if rowOrder != 0 and columnOrder != 0:
+                    continue
 
-            if pPos[currX][j] is None:
-                aPos[currX][j] = 1
-            else:
-                if pPos[currX][j].getColor() != self.color:
-                    aPos[currX][j] = 2
+                i = currX + rowOrder
+                j = currY + columnOrder
 
-                    if pPos[currX][j].getType() == PieceType.KING:
-                        # mark it as direct attacker of the king
-                        aPos[self.x][self.y] = 5
+                while True:
+
+                    # if i == self.x and j == self.y:
+                    #     i += rowOrder
+                    #     j += columnOrder
+                    #     continue
+
+                    if i < 0 or i > 7 or j < 0 or j > 7:
                         break
 
-                    for k in range(j - 1, -1, -1):
-                        if k < 0:
-                            continue
 
-                        if pPos[currX][k] is None:
-                            continue
+                    if pPos[i][j] is None:
+                        aPos[i][j] = 1
+                    else:
+                        if pPos[i][j].getColor() != self.color:
+                            aPos[i][j] = 2
+                            if pPos[i][j].getType() == PieceType.KING:
+                                # mark it as direct attacker of the king
+                                aPos[self.x][self.y] = 5
+                                break
 
-                        if pPos[currX][k].getColor() != self.color \
-                                and pPos[currX][k].getType() == PieceType.KING:
-                            aPos[currX][j] = 4
+                            k = i + rowOrder
+                            l = j + columnOrder
+
+                            while True:
+                                if k < 0 or k > 7 or l < 0 or l > 7:
+                                    break
+
+                                if pPos[k][l] is not None and pPos[k][l].getColor() == self.color:
+                                    break
+
+                                if pPos[k][l] is not None and pPos[k][l].getColor() != self.color \
+                                        and pPos[k][l].getType() == PieceType.KING:
+                                    aPos[i][j] = 4
+                                    break
+
+                                k += rowOrder
+                                l += columnOrder
+
+                            # for k in range(j - 1, -1, -1):
+                            #     if k < 0:
+                            #         continue
+                            #
+                            #     if pPos[currX][k] is None:
+                            #         continue
+                            #
+                            #     if pPos[currX][k].getColor() != self.color \
+                            #             and pPos[currX][k].getType() == PieceType.KING:
+                            #         aPos[currX][j] = 4
+                            #     break
+
+                        else:
+                            if pPos[i][j] != self:
+                                aPos[i][j] = 3
                         break
 
-                else:
-                    aPos[currX][j] = 3
-                break
+                    i += rowOrder
+                    j += columnOrder
 
-        for j in range(currY + 1, 8):
-            if j > 7:
-                continue
-            if pPos[currX][j] is None:
-                aPos[currX][j] = 1
-            else:
-                if pPos[currX][j].getColor() != self.color:
-                    aPos[currX][j] = 2
-
-                    if pPos[currX][j].getType() == PieceType.KING:
-                        # mark it as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    for k in range(j + 1, 8):
-                        if k > 7:
-                            continue
-
-                        if pPos[currX][k] is None:
-                            continue
-
-                        if pPos[currX][k].getColor() != self.color \
-                                and pPos[currX][k].getType() == PieceType.KING:
-                            aPos[currX][j] = 4
-                        break
-                else:
-                    aPos[currX][j] = 3
-                break
-
-        # check the vertical line
-        for i in range(currX - 1, -1, -1):
-            if i < 0:
-                continue
-            if pPos[i][currY] is None:
-                aPos[i][currY] = 1
-            else:
-                if pPos[i][currY].getColor() != self.color:
-                    aPos[i][currY] = 2
-
-                    if pPos[i][currY].getType() == PieceType.KING:
-                        # mark this piece as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    for k in range(i - 1, -1, -1):
-                        if k < 0:
-                            continue
-
-                        if pPos[k][currY] is None:
-                            continue
-
-                        if pPos[k][currY].getColor() != self.color \
-                                and pPos[k][currY].getType() == PieceType.KING:
-                            aPos[i][currY] = 4
-                        break
-                else:
-                    aPos[i][currY] = 3
-                break
-
-        for i in range(currX + 1, 8):
-            if i > 7:
-                continue
-
-            if pPos[i][currY] is None:
-                aPos[i][currY] = 1
-            else:
-                if pPos[i][currY].getColor() != self.color:
-                    aPos[i][currY] = 2
-
-                    if pPos[i][currY].getType() == PieceType.KING:
-                        # mark this piece as direct attacker of the king
-                        aPos[self.x][self.y] = 5
-                        break
-
-                    for k in range(i + 1, 8):
-                        if k > 7:
-                            continue
-
-                        if pPos[k][currY] is None:
-                            continue
-
-                        if pPos[k][currY].getColor() != self.color \
-                                and pPos[k][currY].getType() == PieceType.KING:
-                            aPos[i][currY] = 4
-                        break
-                else:
-                    aPos[i][currY] = 3
-
-                break
+        # # check the horizontal line
+        # for j in range(currY - 1, -1, -1):
+        #     if j < 0:
+        #         continue
+        #
+        #     if pPos[currX][j] is None:
+        #         aPos[currX][j] = 1
+        #     else:
+        #         if pPos[currX][j].getColor() != self.color:
+        #             aPos[currX][j] = 2
+        #
+        #             if pPos[currX][j].getType() == PieceType.KING:
+        #                 # mark it as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             for k in range(j - 1, -1, -1):
+        #                 if k < 0:
+        #                     continue
+        #
+        #                 if pPos[currX][k] is None:
+        #                     continue
+        #
+        #                 if pPos[currX][k].getColor() != self.color \
+        #                         and pPos[currX][k].getType() == PieceType.KING:
+        #                     aPos[currX][j] = 4
+        #                 break
+        #
+        #         else:
+        #             aPos[currX][j] = 3
+        #         break
+        #
+        # for j in range(currY + 1, 8):
+        #     if j > 7:
+        #         continue
+        #     if pPos[currX][j] is None:
+        #         aPos[currX][j] = 1
+        #     else:
+        #         if pPos[currX][j].getColor() != self.color:
+        #             aPos[currX][j] = 2
+        #
+        #             if pPos[currX][j].getType() == PieceType.KING:
+        #                 # mark it as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             for k in range(j + 1, 8):
+        #                 if k > 7:
+        #                     continue
+        #
+        #                 if pPos[currX][k] is None:
+        #                     continue
+        #
+        #                 if pPos[currX][k].getColor() != self.color \
+        #                         and pPos[currX][k].getType() == PieceType.KING:
+        #                     aPos[currX][j] = 4
+        #                 break
+        #         else:
+        #             aPos[currX][j] = 3
+        #         break
+        #
+        # # check the vertical line
+        # for i in range(currX - 1, -1, -1):
+        #     if i < 0:
+        #         continue
+        #     if pPos[i][currY] is None:
+        #         aPos[i][currY] = 1
+        #     else:
+        #         if pPos[i][currY].getColor() != self.color:
+        #             aPos[i][currY] = 2
+        #
+        #             if pPos[i][currY].getType() == PieceType.KING:
+        #                 # mark this piece as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             for k in range(i - 1, -1, -1):
+        #                 if k < 0:
+        #                     continue
+        #
+        #                 if pPos[k][currY] is None:
+        #                     continue
+        #
+        #                 if pPos[k][currY].getColor() != self.color \
+        #                         and pPos[k][currY].getType() == PieceType.KING:
+        #                     aPos[i][currY] = 4
+        #                 break
+        #         else:
+        #             aPos[i][currY] = 3
+        #         break
+        #
+        # for i in range(currX + 1, 8):
+        #     if i > 7:
+        #         continue
+        #
+        #     if pPos[i][currY] is None:
+        #         aPos[i][currY] = 1
+        #     else:
+        #         if pPos[i][currY].getColor() != self.color:
+        #             aPos[i][currY] = 2
+        #
+        #             if pPos[i][currY].getType() == PieceType.KING:
+        #                 # mark this piece as direct attacker of the king
+        #                 aPos[self.x][self.y] = 5
+        #                 break
+        #
+        #             for k in range(i + 1, 8):
+        #                 if k > 7:
+        #                     continue
+        #
+        #                 if pPos[k][currY] is None:
+        #                     continue
+        #
+        #                 if pPos[k][currY].getColor() != self.color \
+        #                         and pPos[k][currY].getType() == PieceType.KING:
+        #                     aPos[i][currY] = 4
+        #                 break
+        #         else:
+        #             aPos[i][currY] = 3
+        #
+        #         break
