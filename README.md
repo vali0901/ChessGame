@@ -1,10 +1,9 @@
-### TODO
-* Retinerea pieselor care sunt atacate (pentru a schimba pionul care ajunge pe ultima linie)
-* Deciderea daca este sau nu sah mat (plus un eventual mesaj de castig)
+### Building
+* Clone repository
+* pip install -r .\requirements.txt
+#### For Windows
+pyinstaller -F --name ChessGame.exe --clean --add-data="img;img" main.py
+#### For Linux 
+pyinstaller -F --name ChessGame --clean --add-data='img:img' --hidden-import='PIL._tkinter_finder' main.py
 
-### Ce este terminat
-* Evidentierea casutelor pe care o piesa poate ajunge / o poate ataca (tinand cont daca este
-sau nu in sah, daca mutarea ei va provoca sah, si toate situatiile similare)
-
-
-Codul e uratel, trebuie mai aranjat si modularizat mai bine
+Executable will be created in dist/ directory.
