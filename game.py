@@ -236,6 +236,9 @@ class Game:
         self.buttonMatrix[0][7].configure(image=darkR)
         self.buttonMatrix[7][7].configure(image=lightR)
 
+        # Show window
+        self.gameWindow.mainloop()
+
     def buttonClicked(self, coords):
         # SELECTING / UNSELECTING A PIECE
 
@@ -412,8 +415,8 @@ class Game:
 
                             rowOrder = -1 if kingX - attX < 0 else (1 if kingX - attX > 0 else 0)
                             columnOrder = -1 if kingY - attY < 0 else (1 if kingY - attY > 0 else 0)
-
-                            self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
+                            if (kingX + rowOrder) in range(0, 8) and (kingY + columnOrder) in range(0, 8):
+                                self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
 
                     else:
                         if self.darkAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
@@ -545,8 +548,8 @@ class Game:
 
                             rowOrder = -1 if kingX - attX < 0 else (1 if kingX - attX > 0 else 0)
                             columnOrder = -1 if kingY - attY < 0 else (1 if kingY - attY > 0 else 0)
-
-                            self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
+                            if (kingX + rowOrder) in range(0, 8) and (kingY + columnOrder) in range(0, 8):
+                                self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
 
                     else:
                         for i in range(0, 8):
