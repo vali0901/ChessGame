@@ -394,7 +394,8 @@ class Game:
                             for j in range(0, 8):
                                 if (self.availablePositions[i][j] == 1 and self.darkAttackLayout[i][j] == 1) \
                                         or (self.availablePositions[i][j] == 2 and
-                                            (self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 6)):
+                                            (self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 6)) \
+                                        or self.availablePositions[i][j] == 3:
                                     self.availablePositions[i][j] = 0
 
                         # don't let the king move on the attacking direction
@@ -405,6 +406,7 @@ class Game:
                             for j in range(0, 8):
                                 if self.darkAttackLayout[i][j] == 5 or self.darkAttackLayout[i][j] == 6:
                                     attackingPiece = self.piecesMatrix[i][j]
+
                         if attackingPiece.getType() == PieceType.QUEEN \
                                 or attackingPiece.getType() == PieceType.ROOK \
                                 or attackingPiece.getType() == PieceType.BISHOP:
@@ -432,24 +434,19 @@ class Game:
                                 if self.darkAttackLayout[i][j] == 5 or self.darkAttackLayout[i][j] == 6:
                                     attackingPiece = self.piecesMatrix[i][j]
 
+                        # init a helper matrix
+                        helper = np.zeros((8, 8))
+
                         match attackingPiece.getType():
-                            case PieceType.PAWN:
+                            case PieceType.PAWN | PieceType.KNIGHT:
                                 for i in range(0, 8):
                                     for j in range(0, 8):
                                         if i == attackingPiece.getCoords()[0] and j == attackingPiece.getCoords()[1] \
-                                                and self.availablePositions[i][j] == 2:
-                                            self.availablePositions[i][j] = 2
+                                                and (self.availablePositions[i][j] == 2
+                                                     or self.availablePositions[i][j] == 4):
+                                            helper[i][j] = 2
                                         else:
-                                            self.availablePositions[i][j] = 0
-
-                            case PieceType.KNIGHT:
-                                for i in range(0, 8):
-                                    for j in range(0, 8):
-                                        if i == attackingPiece.getCoords()[0] and j == attackingPiece.getCoords()[1] and \
-                                                self.availablePositions[i][j] == 2:
-                                            self.availablePositions[i][j] = 2
-                                        else:
-                                            self.availablePositions[i][j] = 0
+                                            helper[i][j] = 0
 
                             case PieceType.QUEEN | PieceType.ROOK | PieceType.BISHOP:
                                 kingX = self.lightKing.getCoords()[0]
@@ -460,15 +457,13 @@ class Game:
                                 rowOrder = -1 if kingX - attX < 0 else (1 if kingX - attX > 0 else 0)
                                 columnOrder = -1 if kingY - attY < 0 else (1 if kingY - attY > 0 else 0)
 
-                                # init a helper matrix
-                                helper = np.zeros((8, 8))
-
                                 i = attX
                                 j = attY
 
                                 while True:
-
-                                    if self.availablePositions[i][j] != 0:
+                                    if self.availablePositions[i][j] == 1 \
+                                            or self.availablePositions[i][j] == 2 \
+                                            or self.availablePositions[i][j] == 4:
                                         helper[i][j] = self.availablePositions[i][j]
 
                                     i += rowOrder
@@ -477,7 +472,7 @@ class Game:
                                     if i == kingX and j == kingY:
                                         break
 
-                                self.availablePositions = helper
+                        self.availablePositions = helper
                     return
 
                 # "last man standing" -> this piece prevents a check, it can only move to the attacking piece,
@@ -560,6 +555,8 @@ class Game:
                                         for j in range(0, 8):
                                             self.availablePositions[i][j] = 0
                                     return
+                                # init a helper matrix
+                                helper = np.zeros((8, 8))
 
                                 # find the attacking piece
                                 attackingPiece = None
@@ -569,25 +566,16 @@ class Game:
                                             attackingPiece = self.piecesMatrix[i][j]
 
                                 match attackingPiece.getType():
-                                    case PieceType.PAWN:
+                                    case PieceType.PAWN | PieceType.KNIGHT:
                                         for i in range(0, 8):
                                             for j in range(0, 8):
-                                                if i == attackingPiece.getCoords()[0] and j == \
-                                                        attackingPiece.getCoords()[1] \
-                                                        and self.availablePositions[i][j] == 2:
-                                                    self.availablePositions[i][j] = 2
+                                                if i == attackingPiece.getCoords()[0] \
+                                                        and j == attackingPiece.getCoords()[1] \
+                                                        and (self.availablePositions[i][j] == 2
+                                                             or self.availablePositions[i][j] == 4):
+                                                    helper[i][j] = 2
                                                 else:
-                                                    self.availablePositions[i][j] = 0
-
-                                    case PieceType.KNIGHT:
-                                        for i in range(0, 8):
-                                            for j in range(0, 8):
-                                                if i == attackingPiece.getCoords()[0] and j == \
-                                                        attackingPiece.getCoords()[1] and \
-                                                        self.availablePositions[i][j] == 2:
-                                                    self.availablePositions[i][j] = 2
-                                                else:
-                                                    self.availablePositions[i][j] = 0
+                                                    helper[i][j] = 0
 
                                     case PieceType.QUEEN | PieceType.BISHOP | PieceType.ROOK:
                                         kingX = self.darkKing.getCoords()[0]
@@ -598,14 +586,13 @@ class Game:
                                         rowOrder = -1 if kingX - attX < 0 else 1 if kingX - attX > 0 else 0
                                         columnOrder = -1 if kingY - attY < 0 else 1 if kingY - attY > 0 else 0
 
-                                        # init a helper matrix
-                                        helper = np.zeros((8, 8))
-
                                         i = attX
                                         j = attY
 
                                         while True:
-                                            if self.availablePositions[i][j] != 0:
+                                            if self.availablePositions[i][j] == 1 \
+                                                    or self.availablePositions[i][j] == 2 \
+                                                    or self.availablePositions[i][j] == 4:
                                                 helper[i][j] = self.availablePositions[i][j]
 
                                             i += rowOrder
@@ -614,7 +601,7 @@ class Game:
                                             if i == kingX and j == kingY:
                                                 break
 
-                                        self.availablePositions = helper
+                                self.availablePositions = helper
 
                     return
 
@@ -748,7 +735,8 @@ class Game:
                         if aux[k][l] == 2:
                             self.darkAttackLayout[k][l] = 2
                         if aux[k][l] == 3:
-                            if self.darkAttackLayout[k][l] == 5:
+                            if self.darkAttackLayout[k][l] == 5 \
+                                    or self.darkAttackLayout[k][l] == 6:
                                 self.darkAttackLayout[k][l] = 6
                             else:
                                 self.darkAttackLayout[k][l] = 3
@@ -792,7 +780,8 @@ class Game:
                         if aux[k][l] == 2:
                             self.lightAttackLayout[k][l] = 2
                         if aux[k][l] == 3:
-                            if self.lightAttackLayout[k][l] == 5:
+                            if self.lightAttackLayout[k][l] == 5 \
+                                    or self.lightAttackLayout[k][l] == 6:
                                 self.lightAttackLayout[k][l] = 6
                             else:
                                 self.lightAttackLayout[k][l] = 3
