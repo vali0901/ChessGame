@@ -4,8 +4,22 @@ import numpy as np
 from numpy import *
 from PIL import Image, ImageTk
 
+import sys
+import os
+
 from pieces import *
 from pieces.Piece import *
+
+
+def resource_path(relative_path):
+    """ Get absolute path to resource, works for dev and for PyInstaller """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 
 class SquareColor(Enum):
@@ -61,7 +75,7 @@ class Game:
 
                 # creates a new button that will do buttonClicked method each time it is pressed
                 # m contains this button's arguments
-                newButton = Button(self.gameWindow, padx=100, pady=80, bg=color.value,
+                newButton = Button(self.gameWindow, padx=20, pady=12, bg=color.value,
                                    command=lambda coords=(i, j): self.buttonClicked(coords))
                 newButton.grid(row=i, column=j)
                 helperRow.append(newButton)
@@ -128,12 +142,12 @@ class Game:
         # adding images to buttons
 
         # adding Pawns
-        lightP = Image.open("img/Chess_plt60.png")
+        lightP = Image.open(resource_path("img/Chess_plt60.png"))
         helper1 = lightP.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightP = helper
 
-        darkP = Image.open("img/Chess_pdt60.png")
+        darkP = Image.open(resource_path("img/Chess_pdt60.png"))
         helper1 = darkP.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkP = helper
@@ -145,12 +159,12 @@ class Game:
         # adding the other pieces
 
         # King
-        darkK = Image.open("img/Chess_kdt60.png")
+        darkK = Image.open(resource_path("img/Chess_kdt60.png"))
         helper1 = darkK.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkK = helper
 
-        lightK = Image.open("img/Chess_klt60.png")
+        lightK = Image.open(resource_path("img/Chess_klt60.png"))
         helper1 = lightK.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightK = helper
@@ -159,12 +173,12 @@ class Game:
         self.buttonMatrix[7][4].configure(image=lightK)
 
         # Queen
-        darkQ = Image.open("img/Chess_qdt60.png")
+        darkQ = Image.open(resource_path("img/Chess_qdt60.png"))
         helper1 = darkQ.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkQ = helper
 
-        lightQ = Image.open("img/Chess_qlt60.png")
+        lightQ = Image.open(resource_path("img/Chess_qlt60.png"))
         helper1 = lightQ.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightQ = helper
@@ -173,12 +187,12 @@ class Game:
         self.buttonMatrix[7][3].configure(image=lightQ)
 
         # Knight
-        darkN = Image.open("img/Chess_ndt60.png")
+        darkN = Image.open(resource_path("img/Chess_ndt60.png"))
         helper1 = darkN.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkN = helper
 
-        lightN = Image.open("img/Chess_nlt60.png")
+        lightN = Image.open(resource_path("img/Chess_nlt60.png"))
         helper1 = lightN.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightN = helper
@@ -189,12 +203,12 @@ class Game:
         self.buttonMatrix[7][6].configure(image=lightN)
 
         # Bishop
-        darkB = Image.open("img/Chess_bdt60.png")
+        darkB = Image.open(resource_path("img/Chess_bdt60.png"))
         helper1 = darkB.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkB = helper
 
-        lightB = Image.open("img/Chess_blt60.png")
+        lightB = Image.open(resource_path("img/Chess_blt60.png"))
         helper1 = lightB.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightB = helper
@@ -205,12 +219,12 @@ class Game:
         self.buttonMatrix[7][2].configure(image=lightB)
 
         # Rook
-        darkR = Image.open("img/Chess_rdt60.png")
+        darkR = Image.open(resource_path("img/Chess_rdt60.png"))
         helper1 = darkR.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         darkR = helper
 
-        lightR = Image.open("img/Chess_rlt60.png")
+        lightR = Image.open(resource_path("img/Chess_rlt60.png"))
         helper1 = lightR.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
         helper = ImageTk.PhotoImage(helper1)
         lightR = helper
