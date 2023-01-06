@@ -1,5 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
+
 import numpy as np
 from numpy import *
 from PIL import Image, ImageTk
@@ -234,9 +236,6 @@ class Game:
         self.buttonMatrix[0][7].configure(image=darkR)
         self.buttonMatrix[7][7].configure(image=lightR)
 
-        # Show window
-        self.gameWindow.mainloop()
-
     def buttonClicked(self, coords):
         # SELECTING / UNSELECTING A PIECE
 
@@ -298,7 +297,11 @@ class Game:
                 else:
                     message = "Light won!"
                 messagebox.showinfo("Game ended", message)
-            self.resetColors()
+            else:
+                if self.isDraw():
+                    message = "Draw!"
+                    messagebox.showinfo("Game ended", message)
+
             return
 
         # attacking a piece
@@ -317,6 +320,7 @@ class Game:
                 if self.isDraw():
                     message = "Draw!"
                     messagebox.showinfo("Game ended", message)
+
     def isDraw(self):
         for i in range(0, 8):
             for j in range(0, 8):
@@ -389,6 +393,28 @@ class Game:
                                         or (self.availablePositions[i][j] == 2 and
                                             (self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 6)):
                                     self.availablePositions[i][j] = 0
+
+                        # don't let the king move on the attacking direction
+
+                        # find the attacking piece
+                        attackingPiece = None
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if self.darkAttackLayout[i][j] == 5 or self.darkAttackLayout[i][j] == 6:
+                                    attackingPiece = self.piecesMatrix[i][j]
+                        if attackingPiece.getType() == PieceType.QUEEN \
+                                or attackingPiece.getType() == PieceType.ROOK \
+                                or attackingPiece.getType() == PieceType.BISHOP:
+                            kingX = self.lightKing.getCoords()[0]
+                            kingY = self.lightKing.getCoords()[1]
+                            attX = attackingPiece.getCoords()[0]
+                            attY = attackingPiece.getCoords()[1]
+
+                            rowOrder = -1 if kingX - attX < 0 else (1 if kingX - attX > 0 else 0)
+                            columnOrder = -1 if kingY - attY < 0 else (1 if kingY - attY > 0 else 0)
+
+                            self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
+
                     else:
                         if self.darkAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
                             for i in range(0, 8):
@@ -500,6 +526,28 @@ class Game:
                                             (self.lightAttackLayout[i][j] == 3 or self.lightAttackLayout[i][j] == 6)) \
                                         or (self.availablePositions[i][j] == 3):
                                     self.availablePositions[i][j] = 0
+
+                        # don't let the king move on the attacking direction
+
+                        # find the attacking piece
+                        attackingPiece = None
+                        for i in range(0, 8):
+                            for j in range(0, 8):
+                                if self.lightAttackLayout[i][j] == 5 or self.lightAttackLayout[i][j] == 6:
+                                    attackingPiece = self.piecesMatrix[i][j]
+                        if attackingPiece.getType() == PieceType.QUEEN \
+                                or attackingPiece.getType() == PieceType.ROOK \
+                                or attackingPiece.getType() == PieceType.BISHOP:
+                            kingX = self.darkKing.getCoords()[0]
+                            kingY = self.darkKing.getCoords()[1]
+                            attX = attackingPiece.getCoords()[0]
+                            attY = attackingPiece.getCoords()[1]
+
+                            rowOrder = -1 if kingX - attX < 0 else (1 if kingX - attX > 0 else 0)
+                            columnOrder = -1 if kingY - attY < 0 else (1 if kingY - attY > 0 else 0)
+
+                            self.availablePositions[kingX + rowOrder][kingY + columnOrder] = 0
+
                     else:
                         for i in range(0, 8):
                             for j in range(0, 8):
