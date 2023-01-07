@@ -33,6 +33,7 @@ class SquareColor(Enum):
 
 class Game:
     gameWindow = None
+    pawnPromotionWin = None
     buttonMatrix = None
     piecesMatrix = None
     selectedPiece = None
@@ -51,6 +52,9 @@ class Game:
     # 'last piece standing' (when a piece is staying between an attacker and its king)
     darkAttackLayout = None
     lightAttackLayout = None
+
+    pawnPromotionPieceType = None
+    pawnPromotionPieceImgPath = None
 
     def __init__(self):
         self.gameWindow = Tk()
@@ -300,10 +304,14 @@ class Game:
                 else:
                     message = "Light won!"
                 messagebox.showinfo("Game ended", message)
+                self.gameWindow.destroy()
+                exit(0)
             else:
                 if self.isDraw():
                     message = "Draw!"
                     messagebox.showinfo("Game ended", message)
+                    self.gameWindow.destroy()
+                    exit(0)
 
             return
 
@@ -648,6 +656,14 @@ class Game:
                     self.availablePositions = helper
 
                 return
+    def createImage(self, imgPath):
+        img = Image.open(imgPath)
+        helper1 = img.resize(
+            (self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
+        helper = ImageTk.PhotoImage(helper1)
+        img = helper
+
+        return img
 
     def simpleMove(self, coords):
         self.piecesMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] = None
@@ -658,8 +674,103 @@ class Game:
         self.buttonMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]].configure(image='')
         self.buttonMatrix[coords[0]][coords[1]].configure(image=movingPieceImage)
 
+        if self.selectedPiece.getType() == PieceType.PAWN:
+            pawnPromotion = False
+            match self.turn:
+                case Color.LIGHT:
+                    if coords[0] == 0:
+                        pawnPromotion = True
+                case Color.DARK:
+                    if coords[0] == 7:
+                        pawnPromotion = True
+            if pawnPromotion:
+                self.pawnPromotionWin = Toplevel(self.gameWindow)
+                self.pawnPromotionWin.title("Change pawn to one of the pieces below")
+
+                qbutt = rbutt = kbutt = bbutt = None
+                match self.turn:
+                    case Color.LIGHT:
+                        # create pieces buttons
+                        qbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.LIGHT.value,
+                                       command=lambda: self.pawnPromotionQueen(coords, 'pyimage6'))
+                        img1 = self.createImage(resource_path("img/Chess_qlt60.png"))
+                        qbutt.configure(image=img1)
+
+                        rbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.DARK.value,
+                                       command=lambda: self.pawnPromotionRook(coords, 'pyimage12'))
+                        img2 = self.createImage(resource_path("img/Chess_rlt60.png"))
+                        rbutt.configure(image=img2)
+
+                        bbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.LIGHT.value,
+                                       command=lambda: self.pawnPromotionBishop(coords, 'pyimage10'))
+                        img3 = self.createImage(resource_path("img/Chess_blt60.png"))
+                        bbutt.configure(image=img3)
+
+                        kbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.DARK.value,
+                                       command=lambda: self.pawnPromotionKnight(coords, 'pyimage8'))
+                        img4 = self.createImage(resource_path("img/Chess_nlt60.png"))
+                        kbutt.configure(image=img4)
+
+                    case Color.DARK:
+                        qbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.LIGHT.value,
+                                       command=lambda: self.pawnPromotionQueen(coords, 'pyimage5'))
+                        img1 = self.createImage(resource_path("img/Chess_qdt60.png"))
+                        qbutt.configure(image=img1)
+
+                        rbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.DARK.value,
+                                       command=lambda: self.pawnPromotionRook(coords, 'pyimage11'))
+                        img2 = self.createImage(resource_path("img/Chess_rdt60.png"))
+                        rbutt.configure(image=img2)
+
+                        bbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.LIGHT.value,
+                                       command=lambda: self.pawnPromotionBishop(coords, 'pyimage9'))
+                        img3 = self.createImage(resource_path("img/Chess_bdt60.png"))
+                        bbutt.configure(image=img3)
+
+                        kbutt = Button(self.pawnPromotionWin, padx=20, pady=12, bg=SquareColor.DARK.value,
+                                       command=lambda: self.pawnPromotionKnight(coords, 'pyimage7'))
+                        img4 = self.createImage(resource_path("img/Chess_ndt60.png"))
+                        kbutt.configure(image=img4)
+
+                qbutt.grid(row=0, column=0)
+                kbutt.grid(row=0, column=1)
+                bbutt.grid(row=0, column=2)
+                rbutt.grid(row=0, column=3)
+
+                self.pawnPromotionWin.grab_set()
+                self.gameWindow.wait_window(self.pawnPromotionWin)
+
         self.selectedPiece = None
         self.selectedPieceCoords = None
+
+    def pawnPromotionQueen(self, coords, img):
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=img)
+        self.piecesMatrix[coords[0]][coords[1]] = Queen(coords[0], coords[1], self.turn)
+
+        self.pawnPromotionWin.grab_release()
+        self.pawnPromotionWin.destroy()
+
+    def pawnPromotionKnight(self, coords, img):
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=img)
+        self.piecesMatrix[coords[0]][coords[1]] = Knight(coords[0], coords[1], self.turn)
+
+        self.pawnPromotionWin.grab_release()
+        self.pawnPromotionWin.destroy()
+
+
+    def pawnPromotionRook(self, coords, img):
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=img)
+        self.piecesMatrix[coords[0]][coords[1]] = Rook(coords[0], coords[1], self.turn)
+
+        self.pawnPromotionWin.grab_release()
+        self.pawnPromotionWin.destroy()
+
+    def pawnPromotionBishop(self, coords, img):
+        self.buttonMatrix[coords[0]][coords[1]].configure(image=img)
+        self.piecesMatrix[coords[0]][coords[1]] = Bishop(coords[0], coords[1], self.turn)
+
+        self.pawnPromotionWin.grab_release()
+        self.pawnPromotionWin.destroy()\
 
     def attackPiece(self, coords):
         removedPiece = self.piecesMatrix[coords[0]][coords[1]]
