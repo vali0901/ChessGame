@@ -1,16 +1,18 @@
 from tkinter import *
 from tkinter import messagebox
-from tkinter import ttk
-
-import numpy as np
 from numpy import *
 from PIL import Image, ImageTk
 
 import sys
 import os
 
-from pieces import *
+from pieces.Bishop import Bishop
+from pieces.King import King
+from pieces.Knight import Knight
+from pieces.Pawn import Pawn
 from pieces.Piece import *
+from pieces.Queen import Queen
+from pieces.Rook import Rook
 
 
 def resource_path(relative_path):
