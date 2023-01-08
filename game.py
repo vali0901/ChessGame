@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import messagebox
-from numpy import *
+import numpy as np
 from PIL import Image, ImageTk
 
 import sys
@@ -317,6 +317,12 @@ class Game:
 
             return
 
+        # king castling
+        if self.availablePositions[coords[0]][coords[1]] == 7:
+            self.doCastling(coords)
+            self.changeTurn()
+            self.resetColors()
+            return
         # attacking a piece
         if self.availablePositions[coords[0]][coords[1]] == 2 \
                 or self.availablePositions[coords[0]][coords[1]] == 4:
@@ -333,6 +339,19 @@ class Game:
                 if self.isDraw():
                     message = "Draw!"
                     messagebox.showinfo("Game ended", message)
+    def doCastling(self, coords):
+        currX = self.selectedPieceCoords[0]
+        currY = self.selectedPieceCoords[1]
+        self.piecesMatrix[curX][currY] = None
+        self.piecesMatrix[coords[0]][coords[1]] = self.selectedPiece
+        if coords[1] < currY:
+            rook = self.piecesMatrix[currX][0]
+            self.piecesMatrix[currX][0] = None
+            self.piecesMatrix[currX][coords[1] + 1] = rook
+        else:
+            rook = self.piecesMatrix[currX][7]
+            self.piecesMatrix[currX][7] = None
+            self.piecesMatrix[currX][coords[1] - 1] = rook
 
     def isDraw(self):
         for i in range(0, 8):
@@ -405,7 +424,7 @@ class Game:
                                 if (self.availablePositions[i][j] == 1 and self.darkAttackLayout[i][j] == 1) \
                                         or (self.availablePositions[i][j] == 2 and
                                             (self.darkAttackLayout[i][j] == 3 or self.darkAttackLayout[i][j] == 6)) \
-                                        or self.availablePositions[i][j] == 3:
+                                        or self.availablePositions[i][j] == 3 or self.availablePositions[i][j] == 7:
                                     self.availablePositions[i][j] = 0
 
                         # don't let the king move on the attacking direction
@@ -532,7 +551,7 @@ class Game:
                                 if (self.availablePositions[i][j] == 1 and self.lightAttackLayout[i][j] == 1) \
                                         or (self.availablePositions[i][j] == 2 and
                                             (self.lightAttackLayout[i][j] == 3 or self.lightAttackLayout[i][j] == 6)) \
-                                        or (self.availablePositions[i][j] == 3):
+                                        or (self.availablePositions[i][j] == 3 or self.availablePositions[i][j] == 7):
                                     self.availablePositions[i][j] = 0
 
                         # don't let the king move on the attacking direction
@@ -668,6 +687,9 @@ class Game:
         return img
 
     def simpleMove(self, coords):
+        if self.selectedPiece.getType() == PieceType.ROOK or self.selectedPiece.getType() == PieceType.KING:
+            self.selectedPiece.pieceMove()
+
         self.piecesMatrix[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] = None
         self.piecesMatrix[coords[0]][coords[1]] = self.selectedPiece
         self.selectedPiece.setCoords(coords)
@@ -800,6 +822,8 @@ class Game:
                         self.buttonMatrix[i][j].configure(bg=SquareColor.ATTACK.value)
                     case 4:
                         self.buttonMatrix[i][j].configure(bg=SquareColor.ATTACK.value)
+                    case 7:
+                        self.buttonMatrix[i][j].configure(bg=SquareColor.AVAILABLE.value)
                     case _:
                         self.buttonMatrix[i][j].configure(
                             bg=SquareColor.LIGHT.value if (i + j) % 2 == 0 else SquareColor.DARK.value)
