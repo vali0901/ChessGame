@@ -20,6 +20,8 @@ class King(Piece):
             for j in range(currY - 1, currY + 2):
                 if i < 0 or j < 0 or i > 7 or j > 7:
                     continue
+                if i == currX and j == currY:
+                    continue
 
                 if pPos[i][j] is None:
                     aPos[i][j] = 1
@@ -39,18 +41,16 @@ class King(Piece):
             right = 0
 
         if pPos[currX][0] is None or pPos[currX][0].getType() != PieceType.ROOK \
-                and pPos[currX][0].getMove() != 0:
+                or pPos[currX][0].getMove() != 0:
             left = 0
 
         for i in range(currY + 1, 7):
             if pPos[currX][i] is not None:
-                print(5)
                 right = 0
                 break
 
         for i in range(1, currY - 1):
             if pPos[currX][i] is not None:
-                print(6)
                 left = 0
                 break
 

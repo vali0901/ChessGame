@@ -339,6 +339,7 @@ class Game:
                 if self.isDraw():
                     message = "Draw!"
                     messagebox.showinfo("Game ended", message)
+
     def doCastling(self, coords):
         currX = self.selectedPieceCoords[0]
         currY = self.selectedPieceCoords[1]
@@ -357,18 +358,49 @@ class Game:
             self.selectedPieceCoords = rook.getCoords()
             self.simpleMove((currX, coords[1] - 1))
 
-
     def isDraw(self):
+        # Dead Position
+        nrKing = nrBishop = nrKnights = nrTotal = 0
+        bishops = []
         for i in range(0, 8):
             for j in range(0, 8):
                 if self.piecesMatrix[i][j] is None:
                     continue
-                if self.piecesMatrix[i][j].getType() != PieceType.KING:
-                    return False
+                if self.piecesMatrix[i][j].getType() == PieceType.KING:
+                    nrKing += 1
+                if self.piecesMatrix[i][j].getType() == PieceType.BISHOP:
+                    bishops.append(self.piecesMatrix[i][j])
+                    nrBishop += 1
+                if self.piecesMatrix[i][j].getType() == PieceType.KNIGHT:
+                    nrKnights += 1
+                nrTotal += 1
 
-        return True
+        if nrTotal == 2 and nrKing == 2:
+            return True
+        if nrTotal == 3 and nrKing == 2 and (nrBishop == 1 or nrKnights == 1):
+            return True
+        if nrTotal == 4 and nrKing == 2 and nrBishop == 2 \
+                and bishops[0].getColor() != bishops[1].getColor() \
+                and (bishops[0].getCoords()[0] + bishops[0].getCoords()[1]) % 2 \
+                == (bishops[1].getCoords()[0] + bishops[1].getCoords()[1]) % 2:
+            return True
+
+        # Stalemate
+        return self.isStalemate()
 
     def isCheckmate(self):
+        if (not self.lightKingIsChecked()) and (not self.darkKingIsChecked()):
+            return False
+
+        return self.piecesCanMove()
+
+    def isStalemate(self):
+        if self.lightKingIsChecked() is True or self.darkKingIsChecked() is True:
+            return False
+
+        return self.piecesCanMove()
+
+    def piecesCanMove(self):
         for i in range(0, 8):
             for j in range(0, 8):
                 if self.piecesMatrix[i][j] is None:
@@ -407,7 +439,6 @@ class Game:
         self.selectedPieceCoords = None
 
         return True
-
     def setKingPositions(self):
         for i in range(0, 8):
             for j in range(0, 8):
@@ -682,6 +713,7 @@ class Game:
                     self.availablePositions = helper
 
                 return
+
     def createImage(self, imgPath):
         img = Image.open(imgPath)
         helper1 = img.resize(
@@ -786,7 +818,6 @@ class Game:
         self.pawnPromotionWin.grab_release()
         self.pawnPromotionWin.destroy()
 
-
     def pawnPromotionRook(self, coords, img):
         self.buttonMatrix[coords[0]][coords[1]].configure(image=img)
         self.piecesMatrix[coords[0]][coords[1]] = Rook(coords[0], coords[1], self.turn)
@@ -799,7 +830,7 @@ class Game:
         self.piecesMatrix[coords[0]][coords[1]] = Bishop(coords[0], coords[1], self.turn)
 
         self.pawnPromotionWin.grab_release()
-        self.pawnPromotionWin.destroy()\
+        self.pawnPromotionWin.destroy()
 
     def attackPiece(self, coords):
         removedPiece = self.piecesMatrix[coords[0]][coords[1]]
