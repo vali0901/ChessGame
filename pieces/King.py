@@ -15,7 +15,6 @@ class King(Piece):
         currX = self.x
         currY = self.y
 
-        # might not be complete
         for i in range(currX - 1, currX + 2):
             for j in range(currY - 1, currY + 2):
                 if i < 0 or j < 0 or i > 7 or j > 7:

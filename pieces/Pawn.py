@@ -5,7 +5,6 @@ class Pawn(Piece):
         super().__init__(x, y, color, PieceType.PAWN)
 
     def setAvailablePositions(self, aPos, pPos):
-        # init with 0 the whole matrix
         for i in range(0, 8):
             for j in range(0, 8):
                 aPos[i][j] = 0

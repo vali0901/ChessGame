@@ -51,15 +51,11 @@ class Piece:
         self.x = coords[0]
         self.y = coords[1]
 
-    # method used for coloring the buttons when a piece is selected
+    # method used for giving a context about this piece (where it can go,
+    # where it can attack, if it interacts with a friendly piece)
     # aPos -> available positions where this piece can be moved
     # pPos -> current positions of all the pieces on the table
     def setAvailablePositions(self, aPos, pPos):
         for i in range(0, 8):
             for j in range(0, 8):
                 aPos[i][j] = 0
-
-    # # returns a matrix containing the direction ths piece can go,
-    # # regardless of the other existing pieces
-    # def getGeneralDirection(self):
-    #     return None

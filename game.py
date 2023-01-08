@@ -55,9 +55,6 @@ class Game:
     darkAttackLayout = None
     lightAttackLayout = None
 
-    pawnPromotionPieceType = None
-    pawnPromotionPieceImgPath = None
-
     def __init__(self):
         self.gameWindow = Tk()
         self.buttonMatrix = []
@@ -150,15 +147,8 @@ class Game:
         # adding images to buttons
 
         # adding Pawns
-        lightP = Image.open(resource_path("img/Chess_plt60.png"))
-        helper1 = lightP.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightP = helper
-
-        darkP = Image.open(resource_path("img/Chess_pdt60.png"))
-        helper1 = darkP.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkP = helper
+        lightP = self.createImage(resource_path("img/Chess_plt60.png"))
+        darkP = self.createImage(resource_path("img/Chess_pdt60.png"))
 
         for i in range(0, 8):
             self.buttonMatrix[1][i].configure(image=darkP)
@@ -167,43 +157,22 @@ class Game:
         # adding the other pieces
 
         # King
-        darkK = Image.open(resource_path("img/Chess_kdt60.png"))
-        helper1 = darkK.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkK = helper
-
-        lightK = Image.open(resource_path("img/Chess_klt60.png"))
-        helper1 = lightK.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightK = helper
+        darkK = self.createImage(resource_path("img/Chess_kdt60.png"))
+        lightK = self.createImage(resource_path("img/Chess_klt60.png"))
 
         self.buttonMatrix[0][4].configure(image=darkK)
         self.buttonMatrix[7][4].configure(image=lightK)
 
         # Queen
-        darkQ = Image.open(resource_path("img/Chess_qdt60.png"))
-        helper1 = darkQ.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkQ = helper
-
-        lightQ = Image.open(resource_path("img/Chess_qlt60.png"))
-        helper1 = lightQ.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightQ = helper
+        darkQ = self.createImage(resource_path("img/Chess_qdt60.png"))
+        lightQ = self.createImage(resource_path("img/Chess_qlt60.png"))
 
         self.buttonMatrix[0][3].configure(image=darkQ)
         self.buttonMatrix[7][3].configure(image=lightQ)
 
         # Knight
-        darkN = Image.open(resource_path("img/Chess_ndt60.png"))
-        helper1 = darkN.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkN = helper
-
-        lightN = Image.open(resource_path("img/Chess_nlt60.png"))
-        helper1 = lightN.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightN = helper
+        darkN = self.createImage(resource_path("img/Chess_ndt60.png"))
+        lightN = self.createImage(resource_path("img/Chess_nlt60.png"))
 
         self.buttonMatrix[0][1].configure(image=darkN)
         self.buttonMatrix[7][1].configure(image=lightN)
@@ -211,15 +180,8 @@ class Game:
         self.buttonMatrix[7][6].configure(image=lightN)
 
         # Bishop
-        darkB = Image.open(resource_path("img/Chess_bdt60.png"))
-        helper1 = darkB.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkB = helper
-
-        lightB = Image.open(resource_path("img/Chess_blt60.png"))
-        helper1 = lightB.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightB = helper
+        darkB = self.createImage(resource_path("img/Chess_bdt60.png"))
+        lightB = self.createImage(resource_path("img/Chess_blt60.png"))
 
         self.buttonMatrix[0][2].configure(image=darkB)
         self.buttonMatrix[7][5].configure(image=lightB)
@@ -227,15 +189,8 @@ class Game:
         self.buttonMatrix[7][2].configure(image=lightB)
 
         # Rook
-        darkR = Image.open(resource_path("img/Chess_rdt60.png"))
-        helper1 = darkR.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        darkR = helper
-
-        lightR = Image.open(resource_path("img/Chess_rlt60.png"))
-        helper1 = lightR.resize((self.buttonMatrix[0][0].winfo_width() - 5, self.buttonMatrix[0][0].winfo_height() - 5))
-        helper = ImageTk.PhotoImage(helper1)
-        lightR = helper
+        darkR = self.createImage(resource_path("img/Chess_rdt60.png"))
+        lightR = self.createImage(resource_path("img/Chess_rlt60.png"))
 
         self.buttonMatrix[0][0].configure(image=darkR)
         self.buttonMatrix[7][0].configure(image=lightR)
@@ -323,6 +278,7 @@ class Game:
             self.changeTurn()
             self.resetColors()
             return
+
         # attacking a piece
         if self.availablePositions[coords[0]][coords[1]] == 2 \
                 or self.availablePositions[coords[0]][coords[1]] == 4:
@@ -351,7 +307,6 @@ class Game:
             self.selectedPiece = rook
             self.selectedPieceCoords = rook.getCoords()
             self.simpleMove((currX, coords[1] + 1))
-
         else:
             rook = self.piecesMatrix[currX][7]
             self.selectedPiece = rook
@@ -439,6 +394,7 @@ class Game:
         self.selectedPieceCoords = None
 
         return True
+
     def setKingPositions(self):
         for i in range(0, 8):
             for j in range(0, 8):
@@ -614,8 +570,8 @@ class Game:
                     else:
                         for i in range(0, 8):
                             for j in range(0, 8):
-                                if self.lightAttackLayout[self.selectedPieceCoords[0]][
-                                    self.selectedPieceCoords[1]] == 4:
+                                if self.lightAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]]\
+                                        == 4:
                                     for i in range(0, 8):
                                         for j in range(0, 8):
                                             self.availablePositions[i][j] = 0
@@ -667,7 +623,6 @@ class Game:
                                                 break
 
                                 self.availablePositions = helper
-
                     return
 
                 # "last man standing" -> this piece prevents a check, it can only move to the attacking piece,
@@ -675,11 +630,6 @@ class Game:
                 if self.lightAttackLayout[self.selectedPieceCoords[0]][self.selectedPieceCoords[1]] == 4:
                     # init a helper matrix
                     helper = np.zeros((8, 8))
-                    # for i in range(0, 8):
-                    #     row = []
-                    #     for j in range(0, 8):
-                    #         row.append(0)
-                    #     helper.append(row)
 
                     kingX = self.darkKing.getCoords()[0]
                     kingY = self.darkKing.getCoords()[1]
@@ -711,7 +661,6 @@ class Game:
                         j += columnOrder
 
                     self.availablePositions = helper
-
                 return
 
     def createImage(self, imgPath):
@@ -833,19 +782,14 @@ class Game:
         self.pawnPromotionWin.destroy()
 
     def attackPiece(self, coords):
-        removedPiece = self.piecesMatrix[coords[0]][coords[1]]
-        removedPieceImage = self.buttonMatrix[coords[0]][coords[1]].cget('image')
-        # needs to be added to a list or sth
         self.simpleMove(coords)
 
     def changeTurn(self):
         if self.turn == Color.DARK:
             self.updateDarkAttackLayout()
-            # print(self.darkAttackLayout)
             self.turn = Color.LIGHT
         else:
             self.updateLightAttackLayout()
-            # print(self.lightAttackLayout)
             self.turn = Color.DARK
 
     def updateColors(self):
