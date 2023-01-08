@@ -342,16 +342,21 @@ class Game:
     def doCastling(self, coords):
         currX = self.selectedPieceCoords[0]
         currY = self.selectedPieceCoords[1]
-        self.piecesMatrix[curX][currY] = None
-        self.piecesMatrix[coords[0]][coords[1]] = self.selectedPiece
+
+        self.simpleMove(coords)
+
         if coords[1] < currY:
             rook = self.piecesMatrix[currX][0]
-            self.piecesMatrix[currX][0] = None
-            self.piecesMatrix[currX][coords[1] + 1] = rook
+            self.selectedPiece = rook
+            self.selectedPieceCoords = rook.getCoords()
+            self.simpleMove((currX, coords[1] + 1))
+
         else:
             rook = self.piecesMatrix[currX][7]
-            self.piecesMatrix[currX][7] = None
-            self.piecesMatrix[currX][coords[1] - 1] = rook
+            self.selectedPiece = rook
+            self.selectedPieceCoords = rook.getCoords()
+            self.simpleMove((currX, coords[1] - 1))
+
 
     def isDraw(self):
         for i in range(0, 8):

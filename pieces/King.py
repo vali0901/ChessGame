@@ -2,10 +2,10 @@ from pieces.Piece import *
 
 
 class King(Piece):
-    hasMove = None
+    hasMoved = None
     def __init__(self, x, y, color):
         super().__init__(x, y, color, PieceType.KING)
-        hasMove = 0
+        self.hasMoved = 0
 
     def setAvailablePositions(self, aPos, pPos):
         for i in range(0, 8):
@@ -28,32 +28,39 @@ class King(Piece):
                         aPos[i][j] = 2
                     else:
                         aPos[i][j] = 3
-        if self.hasMove == 1:
+
+        if self.hasMoved == 1:
             return
+
         right = 1
         left = 1
-        if !(pPos[currX][7] is not None and pPos[currX][7].getType() == PieceType.ROOK
-                and pPos[currX][7].getMove == 0):
+        if pPos[currX][7] is None or pPos[currX][7].getType() != PieceType.ROOK \
+                or pPos[currX][7].getMove() != 0:
             right = 0
-        if !(pPos[currX][0] is not None and pPos[currX][0].getType() == PieceType.ROOK 
-                and pPos[currX][0].getMove == 0):
+
+        if pPos[currX][0] is None or pPos[currX][0].getType() != PieceType.ROOK \
+                and pPos[currX][0].getMove() != 0:
             left = 0
 
         for i in range(currY + 1, 7):
-            if pPos[currX][i] is not None
+            if pPos[currX][i] is not None:
+                print(5)
                 right = 0
                 break
+
         for i in range(1, currY - 1):
-            if pPos[currX][i] is not None
+            if pPos[currX][i] is not None:
+                print(6)
                 left = 0
                 break
 
         if right == 1:
             aPos[currX][currY + 2] = 7
+
         if left == 1:
             aPos[currX][currY - 2] = 7
 
     def getMove(self):
-        return self.hasMove
+        return self.hasMoved
     def pieceMove(self):
-        hasMove = 1 
+        self.hasMoved = 1

@@ -2,10 +2,10 @@ from pieces.Piece import *
 
 
 class Rook(Piece):
-    hasMove = None
+    hasMoved = None
     def __init__(self, x, y, color):
         super().__init__(x, y, color, PieceType.ROOK)
-        hasMove = 0
+        self.hasMoved = 0
 
     def setAvailablePositions(self, aPos, pPos):
         for i in range(0, 8):
@@ -64,7 +64,7 @@ class Rook(Piece):
                     i += rowOrder
                     j += columnOrder
     def getMove(self):
-        return self.hasMove
+        return self.hasMoved
     def pieceMove(self):
-        hasMove = 1 
+        self.hasMoved = 1
 
