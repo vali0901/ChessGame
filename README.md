@@ -1,10 +1,21 @@
 
 ### Building
 
-Prerequisites: python3, python3-pip python3-venv, python3-tk.
-
 * Clone repository
 * $ cd ChessGame/
+
+#### Using Makefile (Linux)
+
+make run - run using interpreter
+
+make build - build executable
+
+make run-exec - run build executable
+
+#### Manual (Windows and Linux)
+
+Prerequisites: python3, python3-pip python3-venv, python3-tk.
+
 * $ python3 -m venv .venv
 * Linux - $ source .venv/bin/activate
 * Windows
