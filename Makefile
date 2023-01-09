@@ -3,7 +3,8 @@ SHELL := /bin/bash
 VENV = .venv/bin/
 
 SRC = \
-	$(shell ls src/pieces/*py)
+	$(shell ls src/pieces/*py) \
+	$(shell ls src/*py)
 
 DEPENDENCIES = \
 	python3 \
