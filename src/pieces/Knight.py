@@ -10,7 +10,7 @@ class Knight(Piece):
             for j in range(0, 8):
                 aPos[i][j] = 0
 
-        currX = self.x
+        currX = self.x   
         currY = self.y
 
         for i in range(-2, 3):
